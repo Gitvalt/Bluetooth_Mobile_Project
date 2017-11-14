@@ -5,10 +5,13 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +20,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements DeviceAdapter.DeviceListener {
 
@@ -45,17 +49,35 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         setSupportActionBar(toolbar);
 
         mImageController = new ImageController(this);
-        mBluetoothController = new BluetoothController(this, mReceiver);
+
+        boolean isBluetoothValid = true;
+
+        try
+        {
+            mBluetoothController = new BluetoothController(this, mReceiver);
+        }
+        catch (NullPointerException error)
+        {
+            Log.e("Bluetooth_creation", "This devices cannot implement bluetooth connectinos");
+            isBluetoothValid = false;
+        }
 
         deviceRecycler = (RecyclerView)findViewById(R.id.recyclerView);
         layoutManager = new LinearLayoutManager(getApplicationContext());
         deviceRecycler.setLayoutManager(layoutManager);
 
-        //bluetooth-controller, where deviceselect interface is implemented, current activity
-        DeviceAdapter deviceAdapter = new DeviceAdapter(mBluetoothController, this, this);
-        deviceRecycler.setAdapter(deviceAdapter);
+        if(isBluetoothValid)
+        {
+            //bluetooth-controller, where deviceselect interface is implemented, current activity
+            DeviceAdapter deviceAdapter = new DeviceAdapter(mBluetoothController, this, this);
+            deviceRecycler.setAdapter(deviceAdapter);
 
-        runDeviceScan();
+            runDeviceScan();
+        }
+        else
+        {
+            Toast.makeText(getApplicationContext(), "Bluetooth is not implemented", Toast.LENGTH_LONG).show();
+        }
     }
 
 
@@ -132,6 +154,13 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         startActivity(intent);
     }
 
+    public void onListRefresh(View view)
+    {
+        mBluetoothController.clearDeviceList();
+        deviceRecycler.getAdapter().notifyDataSetChanged();
+        Log.i("Device_Scan", "Refresh list click received");
+        runDeviceScan();
+    }
 
     //---interface implementation---
     //Device from recycler view is selected

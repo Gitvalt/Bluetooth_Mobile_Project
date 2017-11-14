@@ -61,9 +61,14 @@ public class BluetoothController {
     public BluetoothController(Activity activity, BroadcastReceiver broadC)
     {
         DetectedDevices = new ArrayMap<>();
-        mmBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mmParent = activity;
         mmBroadcastReceiver = broadC;
+
+        mmBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        if(mmBluetoothAdapter == null)
+        {
+            throw new NullPointerException("This devices does not support bluetooth connections");
+        }
     }
 
 
@@ -258,6 +263,22 @@ public class BluetoothController {
         {
             Log.e("Adding Device", "Adding device to list has failed", error);
         }
+    }
+
+    public void removeDeviceFromList(@NonNull BluetoothDevice mDevice)
+    {
+        try
+        {
+            DetectedDevices.remove(mDevice.getAddress());
+        }
+        catch (Exception error)
+        {
+            Log.e("Removing Device", "Removing device from list has failed", error);
+        }
+    }
+
+    public void clearDeviceList(){
+        DetectedDevices.clear();
     }
 
     private void addPairedDevicesToList()

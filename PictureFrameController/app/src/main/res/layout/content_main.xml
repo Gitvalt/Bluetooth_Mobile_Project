@@ -10,27 +10,57 @@
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/LinearLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
     </android.support.v7.widget.RecyclerView>
 
-    <Button
-        android:id="@+id/Button_photoApp"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/LinearLayout"
+        android:layout_width="347dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:onClick="onPhotoActivity"
-        android:text="Open PhotoAPP"
+        android:layout_marginBottom="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="32dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/recyclerView" />
+        app:layout_constraintTop_toBottomOf="@+id/recyclerView">
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/buttonRefreshList"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:clickable="true"
+            android:onClick="onListRefresh"
+            app:backgroundTint="@color/colorPrimaryDark"
+            app:fabSize="normal"
+            app:rippleColor="@android:color/background_light"
+            app:srcCompat="@drawable/bluetooth_connected_black"
+            tools:layout_editor_absoluteX="31dp"
+            tools:layout_editor_absoluteY="398dp" />
+
+        <TextView
+            android:id="@+id/refreshBox"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="20dp"
+            android:layout_weight="10"
+            android:paddingVertical="10dp"
+            android:text="@string/refresh"
+            android:textAlignment="textStart"
+            android:textSize="18sp" />
+    </LinearLayout>
+
 </android.support.constraint.ConstraintLayout>

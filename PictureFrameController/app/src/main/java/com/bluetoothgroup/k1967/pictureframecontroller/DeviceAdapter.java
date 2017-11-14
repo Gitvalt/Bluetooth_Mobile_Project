@@ -2,6 +2,7 @@ package com.bluetoothgroup.k1967.pictureframecontroller;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
@@ -11,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,8 +88,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         String DeviceAddress = deviceArrayMap.keyAt(position);
         holder.deviceAddress.setText(DeviceAddress);
 
-        int state = deviceArrayMap.valueAt(position).getBondState();
+        BluetoothDevice device = deviceArrayMap.valueAt(position);
+        holder.deviceName.setText(device.getName());
 
+        int state = device.getBondState();
         switch (state){
             case BluetoothDevice.BOND_BONDING:
                 holder.deviceStatus.setText("Bonding...");
@@ -122,6 +126,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         public TextView deviceAddress;
         public TextView deviceStatus;
         public TextView deviceName;
+        public LinearLayout background;
+        public boolean isSelected;
 
         public ViewHolder(final View itemView) {
             super(itemView);
@@ -129,6 +135,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             deviceName = (TextView)itemView.findViewById(R.id.Name);
             deviceAddress = (TextView)itemView.findViewById(R.id.Address);
             deviceStatus = (TextView)itemView.findViewById(R.id.Status);
+            background = (LinearLayout)itemView.findViewById(R.id.LinearLayout);
 
             /**
              * On short click update the "selectMac"-textbox
