@@ -5,10 +5,13 @@ import android.graphics.Bitmap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageView;
 
-public class PictureActivity extends AppCompatActivity {
+public class DeviceActivity extends AppCompatActivity {
 
     private ImageController mImageController;
+    private ImageView previewImage;
     private static final int IMAGECAPTURE_TAG = 664;
 
     @Override
@@ -17,6 +20,7 @@ public class PictureActivity extends AppCompatActivity {
         setContentView(R.layout.activity_picture);
 
         mImageController = new ImageController(this);
+        //previewImage = (ImageView)findViewById(R.id.previewView);
     }
 
     @Override
@@ -27,11 +31,14 @@ public class PictureActivity extends AppCompatActivity {
             if(resultCode == RESULT_OK)
             {
                 //Image has been taken successfully
-                Log.e("IMAGE_ACTIVITY_RESULT", "Taking image has succeeded");
+                Log.i("IMAGE_ACTIVITY_RESULT", "Taking image has succeeded");
 
                 //get image from intent
                 Bundle bundle = data.getExtras();
                 Bitmap image = (Bitmap)bundle.get("data");
+
+                //show image
+                previewImage.setImageBitmap(image);
             }
             else
             {
@@ -39,6 +46,17 @@ public class PictureActivity extends AppCompatActivity {
                 Log.e("IMAGE_ACTIVITY_RESULT", "Taking image has failed");
             }
         }
+    }
+
+    public void OnClick_GalleryButton(View view)
+    {
+
+    }
+
+    public void OnClick_CameraButton(View view)
+    {
+        mImageController.checkCameraHardware();
+        mImageController.takeAPicture();
     }
 
 }
