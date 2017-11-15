@@ -7,24 +7,32 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 public class DeviceActivity extends AppCompatActivity {
 
-    private ImageController mImageController;
-    private ImageView previewImage;
-    private static final int IMAGECAPTURE_TAG = 664;
+    private TextView deviceHeader;
+    private TextView deviceAddress;
+    private TextView devicePairing;
+
+    private BluetoothController mmBluetoothController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_picture);
+        setContentView(R.layout.activity_device);
 
-        mImageController = new ImageController(this);
-        //previewImage = (ImageView)findViewById(R.id.previewView);
+        deviceHeader = (TextView)findViewById(R.id.deviceHeader);
+        deviceAddress = (TextView)findViewById(R.id.addressView);
+        devicePairing = (TextView)findViewById(R.id.pairingStatus);
+
+        deviceHeader.setText(savedInstanceState.getString("deviceName"));
+
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        /*
         if(requestCode == IMAGECAPTURE_TAG)
         {
             Log.i("IMAGE_ACTIVITY_RESULT", "Got response of take image activity");
@@ -46,17 +54,12 @@ public class DeviceActivity extends AppCompatActivity {
                 Log.e("IMAGE_ACTIVITY_RESULT", "Taking image has failed");
             }
         }
+        */
     }
 
-    public void OnClick_GalleryButton(View view)
-    {
-
+    //---button onClick---
+    public void onReturnButtonClick(View view){
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
     }
-
-    public void OnClick_CameraButton(View view)
-    {
-        mImageController.checkCameraHardware();
-        mImageController.takeAPicture();
-    }
-
 }

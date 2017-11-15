@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.graphics.Color;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
@@ -31,10 +32,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     public Activity activity;
     private MainActivity mParent;
 
+    @Nullable
+    private int selectedDevice;
 
     //---Inteface for when device is selected---
     public interface DeviceListener {
-        void OnDeviceSelect(BluetoothDevice selectedDevice, MainActivity.availableActions action);
+        void OnDeviceSelect(BluetoothDevice selectedDevice);
     }
 
 
@@ -53,6 +56,8 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             //setup callback
             this.mmCallback = deviceListener;
+
+            selectedDevice = -1;
 
             //setup activities
             activity = act;
@@ -85,12 +90,29 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
     @Override
     public void onBindViewHolder(DeviceAdapter.ViewHolder holder, int position)
     {
+        //item address
         String DeviceAddress = deviceArrayMap.keyAt(position);
         holder.deviceAddress.setText(DeviceAddress);
 
+        //item name
         BluetoothDevice device = deviceArrayMap.valueAt(position);
         holder.deviceName.setText(device.getName());
 
+        //item background color
+        if(selectedDevice == -1)
+        {
+            holder.background.setBackgroundColor(Color.WHITE);
+        }
+        else if(deviceArrayMap.keyAt(selectedDevice).equals(DeviceAddress))
+        {
+            holder.background.setBackgroundColor(Color.GRAY);
+        }
+        else
+        {
+            holder.background.setBackgroundColor(Color.WHITE);
+        }
+
+        //item bonding state
         int state = device.getBondState();
         switch (state){
             case BluetoothDevice.BOND_BONDING:
@@ -109,7 +131,6 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 
     }
-
 
     //---Not implemented---
     @Override
@@ -138,14 +159,25 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             background = (LinearLayout)itemView.findViewById(R.id.LinearLayout);
 
             /**
-             * On short click update the "selectMac"-textbox
+             * when a short click is done to a item in the recyclerview, selected item is highlighted and set as "selectedDevice"
              */
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     BluetoothDevice selectedClickDevice = deviceArrayMap.valueAt(getAdapterPosition());
-                    Snackbar.make(itemView, "Got click", Snackbar.LENGTH_LONG).show();
                     Log.i("DeviceAdapter", "Got short recyclerview itemclick");
+
+                    int tmp = deviceArrayMap.indexOfKey(selectedClickDevice.getAddress());
+
+                    if(selectedDevice == tmp) {
+                        selectedDevice = -1;
+                    }
+                    else
+                    {
+                        selectedDevice = deviceArrayMap.indexOfKey(selectedClickDevice.getAddress());
+                    }
+
+                    notifyDataSetChanged();
                 }
 
             });
@@ -156,36 +188,22 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
             itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    //we got a click
-                    Log.w("Got CLICK", "We received a long click from you! At position " + getAdapterPosition());
+
+                    Log.i("RecyclerView", "We received a long click from user! At position " + getAdapterPosition());
 
                     BluetoothDevice selectedDevice = deviceArrayMap.valueAt(getAdapterPosition());
 
-                    boolean continueActions = true;
-                    MainActivity.availableActions action = null;
-
-
-                    switch (selectedDevice.getBondState()){
-                        case BluetoothDevice.BOND_BONDED:
-                            //open device view
-                            break;
-                        case BluetoothDevice.BOND_BONDING:
-                            continueActions = false;
-                            break;
-                        case BluetoothDevice.BOND_NONE:
-                            action = MainActivity.availableActions.Pair;
-                            break;
-                    }
-
-                    if(continueActions)
+                    if(selectedDevice.getBondState() != BluetoothDevice.BOND_BONDING)
                     {
-                        Log.i("DeviceAdapter", "Got long recyclerview itemclick");
-                        mmCallback.OnDeviceSelect(selectedDevice, action);
+                        Log.i("DeviceAdapter", "Got long recycler-view item-click");
+                        mmCallback.OnDeviceSelect(selectedDevice);
+
                     }
                     else
                     {
                         Log.w("Bluetooth", "Device is still bonding");
                     }
+
                     return false;
                 }
             });

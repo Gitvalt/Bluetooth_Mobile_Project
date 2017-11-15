@@ -165,9 +165,41 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
     //---interface implementation---
     //Device from recycler view is selected
     @Override
-    public void OnDeviceSelect(BluetoothDevice selectedDevice, availableActions action)
-    {
+    public void OnDeviceSelect(@NonNull BluetoothDevice selectedDevice) {
+
+        if(selectedDevice == null)
+        {
+            Log.e("DeviceSelect", "Selected device is empty!");
+            return;
+        }
+
         Log.i("DeviceOnSelect", "Device '" + selectedDevice.getAddress() + "' was selected");
+
+        switch (selectedDevice.getBondState()){
+            case BluetoothDevice.BOND_BONDING:
+                Log.e("DeviceSelect", "Got a click, even though that should have not been possible");
+                //if device is still bonding, then getting a click should have not been possible
+                break;
+
+            case BluetoothDevice.BOND_NONE:
+                selectedDevice.createBond();
+                updateRecyclerList();
+                break;
+
+            case BluetoothDevice.BOND_BONDED:
+                Intent deviceActivity = new Intent(getApplicationContext(), DeviceActivity.class);
+                Bundle savedData = new Bundle();
+
+                savedData.putString("deviceName", selectedDevice.getName());
+                savedData.putString("deviceAddress", selectedDevice.getAddress());
+
+                startActivity(deviceActivity, savedData);
+                break;
+
+            default:
+                Log.e("DeviceSelect", "Undefined bond state");
+                break;
+        }
     }
 
 
@@ -216,6 +248,7 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                             Log.i("state_changed", "No Bond!");
                             break;
                     }
+                    updateRecyclerList();
                     break;
             }
         }

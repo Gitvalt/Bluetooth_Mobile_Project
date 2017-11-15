@@ -28,5 +28,8 @@
 
     <string name="placeholder">Placeholder</string>
     <string name="submit">Submit</string>
+    <string name="PairingStatus">Device pairing status</string>
+    <string name="physicalAdress">Physical Adress</string>
+    <string name="returntolist">Return to list</string>
 
 </resources>
