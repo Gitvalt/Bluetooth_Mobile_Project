@@ -29,7 +29,7 @@ import java.util.Set;
 
 public class BluetoothController {
 
-    private ArrayMap<String, BluetoothDevice> DetectedDevices;
+    private static ArrayMap<String, BluetoothDevice> DetectedDevices;
     private BluetoothAdapter mmBluetoothAdapter;
     private Activity mmParent;
     private BroadcastReceiver mmBroadcastReceiver;
@@ -60,7 +60,9 @@ public class BluetoothController {
     //---Constructor---
     public BluetoothController(Activity activity, BroadcastReceiver broadC)
     {
-        DetectedDevices = new ArrayMap<>();
+        if(DetectedDevices == null) {
+            DetectedDevices = new ArrayMap<>();
+        }
         mmParent = activity;
         mmBroadcastReceiver = broadC;
 
@@ -224,6 +226,9 @@ public class BluetoothController {
                 makeDiscoverable(20);
 
                 mmBluetoothAdapter.startDiscovery();
+
+                mHandler.getLooper().quit();
+
                 Thread stopScanning = new Thread() {
                     @Override
                     public void run() {
@@ -296,7 +301,7 @@ public class BluetoothController {
         }
     }
 
-    private ArrayMap getPairedDevices()
+    public ArrayMap getPairedDevices()
     {
         Set<BluetoothDevice> devices = mmBluetoothAdapter.getBondedDevices();
         ArrayMap<String, BluetoothDevice> tmp = new ArrayMap<>();

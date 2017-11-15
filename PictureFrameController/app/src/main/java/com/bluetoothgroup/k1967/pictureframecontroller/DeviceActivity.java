@@ -1,9 +1,15 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,6 +22,7 @@ public class DeviceActivity extends AppCompatActivity {
     private TextView devicePairing;
 
     private BluetoothController mmBluetoothController;
+    private BluetoothDevice mmSelectedDevice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,36 +33,66 @@ public class DeviceActivity extends AppCompatActivity {
         deviceAddress = (TextView)findViewById(R.id.addressView);
         devicePairing = (TextView)findViewById(R.id.pairingStatus);
 
-        deviceHeader.setText(savedInstanceState.getString("deviceName"));
 
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        /*
-        if(requestCode == IMAGECAPTURE_TAG)
+        Intent inputIntent = getIntent();
+        if(inputIntent != null)
         {
-            Log.i("IMAGE_ACTIVITY_RESULT", "Got response of take image activity");
-            if(resultCode == RESULT_OK)
+
+            deviceHeader.setText(inputIntent.getStringExtra("deviceName"));
+            String device_address = inputIntent.getStringExtra("deviceAddress");
+            if(device_address != null)
             {
-                //Image has been taken successfully
-                Log.i("IMAGE_ACTIVITY_RESULT", "Taking image has succeeded");
+                deviceAddress.setText(device_address);
+                mmBluetoothController = new BluetoothController(this, mReceiver);
 
-                //get image from intent
-                Bundle bundle = data.getExtras();
-                Bitmap image = (Bitmap)bundle.get("data");
+                ArrayMap detectedDevices = mmBluetoothController.getDetectedDevices();
 
-                //show image
-                previewImage.setImageBitmap(image);
+                if(detectedDevices.containsKey(device_address))
+                {
+                    mmSelectedDevice = (BluetoothDevice)detectedDevices.get(device_address);
+
+                    int bond_state;
+
+                    switch (mmSelectedDevice.getBondState())
+                    {
+                        case BluetoothDevice.BOND_BONDED:
+                            bond_state = R.string.Bonded;
+                            break;
+
+                        case BluetoothDevice.BOND_BONDING:
+                            bond_state = R.string.Bonding;
+                            break;
+
+                        case BluetoothDevice.BOND_NONE:
+                            bond_state = R.string.noBond;
+                            break;
+
+                        default:
+                            bond_state = R.string.unkown_status;
+                    }
+
+                    devicePairing.setText(bond_state);
+                }
+                else
+                {
+                    Log.e("DeviceActivity", "Selected devices is not found");
+                }
             }
             else
             {
-                //Image has failed
-                Log.e("IMAGE_ACTIVITY_RESULT", "Taking image has failed");
+                Log.e("DeviceActivity", "Device address not defined");
             }
         }
-        */
     }
+
+
+
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+        }
+    };
 
     //---button onClick---
     public void onReturnButtonClick(View view){

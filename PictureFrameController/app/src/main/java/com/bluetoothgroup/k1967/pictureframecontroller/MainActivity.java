@@ -25,7 +25,7 @@ import android.widget.Toast;
 public class MainActivity extends AppCompatActivity implements DeviceAdapter.DeviceListener {
 
     private ImageController mImageController;
-    private BluetoothController mBluetoothController;
+    public BluetoothController mBluetoothController;
 
     private RecyclerView deviceRecycler;
     private RecyclerView.Adapter mAdapter;
@@ -193,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                 savedData.putString("deviceName", selectedDevice.getName());
                 savedData.putString("deviceAddress", selectedDevice.getAddress());
 
-                startActivity(deviceActivity, savedData);
+                deviceActivity.putExtras(savedData);
+
+                startActivity(deviceActivity);
                 break;
 
             default:
@@ -202,6 +204,19 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         }
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if(mBluetoothController != null)
+        {
+            BluetoothAdapter mAdapter = mBluetoothController.getBluetoothAdapter();
+            if(mAdapter.isDiscovering())
+            {
+                mAdapter.cancelDiscovery();
+            }
+        }
+    }
 
     //---Broadcast receiver---
     /**
