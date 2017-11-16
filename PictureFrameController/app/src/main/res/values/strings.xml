@@ -31,5 +31,7 @@
     <string name="PairingStatus">Device pairing status</string>
     <string name="physicalAdress">Physical Adress</string>
     <string name="returntolist">Return to list</string>
+    <string name="discoverableLabel">Make this device discoverable</string>
+    <string name="discoverable_device">Device is currently discoverable</string>
 
 </resources>

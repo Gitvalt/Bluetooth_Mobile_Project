@@ -3,4 +3,5 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#7080e6</color>
     <color name="colorAccent">#FF4081</color>
+    <color name="deviceInvisble">#5d5d5d</color>
 </resources>

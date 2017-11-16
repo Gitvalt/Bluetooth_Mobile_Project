@@ -13,6 +13,7 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.PermissionChecker;
 import android.util.ArrayMap;
@@ -36,6 +37,7 @@ public class BluetoothController {
 
     private static final int ACTIVATE_BLUETOOTH_TAG = 738;
     private static final int BLUETOOTH_PERMISSION_TAG = 379;
+    public static final int MAKE_DEVICE_DISCOVERABLE = 789;
 
     private static final Handler mHandler = new Handler(){
         @Override
@@ -58,7 +60,7 @@ public class BluetoothController {
      */
 
     //---Constructor---
-    public BluetoothController(Activity activity, BroadcastReceiver broadC)
+    public BluetoothController(Activity activity, @Nullable BroadcastReceiver broadC)
     {
         if(DetectedDevices == null) {
             DetectedDevices = new ArrayMap<>();
@@ -222,12 +224,7 @@ public class BluetoothController {
 
                 registerBluetoothService();
 
-                //makes this device discoverable for 20 seconds
-                makeDiscoverable(20);
-
                 mmBluetoothAdapter.startDiscovery();
-
-                mHandler.getLooper().quit();
 
                 Thread stopScanning = new Thread() {
                     @Override
@@ -255,7 +252,7 @@ public class BluetoothController {
         //Discover this devices
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, seconds);
-        mmParent.startActivity(discoverableIntent);
+        mmParent.startActivityForResult(discoverableIntent, MAKE_DEVICE_DISCOVERABLE);
     }
 
     public void addDeviceToList(@NonNull BluetoothDevice mDevice)

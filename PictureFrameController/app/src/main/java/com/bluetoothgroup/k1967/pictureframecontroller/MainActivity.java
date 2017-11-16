@@ -1,5 +1,6 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
@@ -7,10 +8,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,26 +23,42 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements DeviceAdapter.DeviceListener {
 
-    private ImageController mImageController;
     public BluetoothController mBluetoothController;
+
+    private Handler handler;
 
     private RecyclerView deviceRecycler;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
 
-    private static final int IMAGECAPTURE_TAG = 664;
+
+    private int time_discoverable_seconds = 20;  //in seconds
+
+    private static final int IMAGE_CAPTURE_TAG = 664;
     private static final int ACTIVATE_BLUETOOTH_TAG = 738;
     private static final int BLUETOOTH_PERMISSION_TAG = 379;
 
-    public static enum availableActions {
-        Pair,
-        unPair
-    }
+    private Thread buttonDiscoverableThread = new Thread(){
+        @Override
+        public void run() {
+            Log.i("Discoverable", "Discovery ends");
+            FloatingActionButton visibilityButton = (FloatingActionButton)findViewById(R.id.buttonMakeDiscoverable);
+            TextView label = (TextView)findViewById(R.id.Discover_Label);
 
+            label.setText(R.string.discoverableLabel);
+            visibilityButton.setImageResource(R.drawable.device_invisible);
+            visibilityButton.setEnabled(true);
+
+        }
+    };
+
+
+    //---Constructor---
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,9 +67,11 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mImageController = new ImageController(this);
-
+        handler = new Handler();
         boolean isBluetoothValid = true;
+
+        //start listening if bluetooth is turned on or off
+        registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
 
         try
         {
@@ -58,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         }
         catch (NullPointerException error)
         {
-            Log.e("Bluetooth_creation", "This devices cannot implement bluetooth connectinos");
+            Log.e("Bluetooth_creation", "This devices cannot implement bluetooth connections");
             isBluetoothValid = false;
         }
 
@@ -68,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
 
         if(isBluetoothValid)
         {
-            //bluetooth-controller, where deviceselect interface is implemented, current activity
+            //bluetooth-controller, where device-select interface is implemented, current activity
             DeviceAdapter deviceAdapter = new DeviceAdapter(mBluetoothController, this, this);
             deviceRecycler.setAdapter(deviceAdapter);
 
@@ -80,13 +101,28 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         }
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
 
+        if(mBluetoothController != null)
+        {
+            BluetoothAdapter mAdapter = mBluetoothController.getBluetoothAdapter();
+            if(mAdapter.isDiscovering())
+            {
+                mAdapter.cancelDiscovery();
+            }
+        }
+    }
+
+
+    //---Handling Broadcast and Activity responses---
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         switch (requestCode)
         {
-            case IMAGECAPTURE_TAG:
+            case IMAGE_CAPTURE_TAG:
                 Log.i("IMAGE_ACTIVITY_RESULT", "Got response of take image activity");
                 if(resultCode == RESULT_OK)
                 {
@@ -118,9 +154,21 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                     mBluetoothController.activateBluetooth(true);
                 }
                 break;
+
+            case BluetoothController.MAKE_DEVICE_DISCOVERABLE:
+
+                if(requestCode == RESULT_CANCELED)
+                {
+                    Log.e("Discoverable", "Discovery has been declined. Making floatbutton available");
+                    handler.post(buttonDiscoverableThread);
+                }
+                else
+                {
+                    Log.i("Discoverable", "Phone has been made discoverable for certain duration: " + resultCode);
+                }
+                break;
         }
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -130,6 +178,33 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                 mBluetoothController.findDevices();
                 break;
         }
+    }
+
+
+    //---Alert Dialogs---
+    public AlertDialog getBluetoothOffAlert(Activity main)
+    {
+        AlertDialog.Builder bluetoothOffAlert = new AlertDialog.Builder( MainActivity.this)
+                .setTitle("Bluetooth is turned off")
+                .setMessage("Bluetooth should be turned on in order to use the application")
+                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.i("Bluetooth", "Turn Bluetooth off");
+                        System.exit(0);
+                    }
+                })
+                .setPositiveButton("Turn on", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.i("Bluetooth", "Turn Bluetooth on");
+                        mBluetoothController.activateBluetooth(true);
+                    }
+                });
+
+        AlertDialog alertDialog = bluetoothOffAlert.create();
+
+        return alertDialog;
     }
 
 
@@ -160,6 +235,31 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         deviceRecycler.getAdapter().notifyDataSetChanged();
         Log.i("Device_Scan", "Refresh list click received");
         runDeviceScan();
+    }
+
+    public void onDiscoverableButton(View view)
+    {
+        if(mBluetoothController != null) {
+
+            int time_discoverable_milliseconds = time_discoverable_seconds * 1000;
+
+            //set "Active"-mode
+            FloatingActionButton visibilityButton = (FloatingActionButton)findViewById(R.id.buttonMakeDiscoverable);
+            TextView label = (TextView)findViewById(R.id.Discover_Label);
+
+            label.setText(R.string.discoverableLabel);
+            visibilityButton.setImageResource(R.drawable.device_visible);
+            visibilityButton.setEnabled(false);
+
+            Log.i("Discoverable", "Making this device discoverable for 20 second");
+            mBluetoothController.makeDiscoverable(20);
+
+            //after time has passed make button available again
+            handler.postDelayed(buttonDiscoverableThread, time_discoverable_milliseconds);
+        }
+        else {
+            Log.e("Discoverable", "Cannot make devices discoverable, This devices does not implement bluetooth!");
+        }
     }
 
     //---interface implementation---
@@ -204,19 +304,6 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
         }
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        if(mBluetoothController != null)
-        {
-            BluetoothAdapter mAdapter = mBluetoothController.getBluetoothAdapter();
-            if(mAdapter.isDiscovering())
-            {
-                mAdapter.cancelDiscovery();
-            }
-        }
-    }
 
     //---Broadcast receiver---
     /**
@@ -264,6 +351,23 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                             break;
                     }
                     updateRecyclerList();
+                    break;
+
+                case BluetoothAdapter.ACTION_STATE_CHANGED:
+                    int tmp = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                    Log.i("ACTION_STATE", "Got state changed to '" + tmp);
+                    if(tmp == BluetoothAdapter.STATE_TURNING_ON)
+                    {
+                        Log.w("Bluetooth", "Bluetooth is turned on");
+                    }
+                    else if(tmp == BluetoothAdapter.STATE_TURNING_OFF)
+                    {
+                        Log.w("Bluetooth","Bluetooth has been turned off");
+                        getBluetoothOffAlert(getParent()).show();
+                    }
+                    else {
+
+                    }
                     break;
             }
         }

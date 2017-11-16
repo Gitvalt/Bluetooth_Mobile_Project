@@ -43,7 +43,7 @@ public class DeviceActivity extends AppCompatActivity {
             if(device_address != null)
             {
                 deviceAddress.setText(device_address);
-                mmBluetoothController = new BluetoothController(this, mReceiver);
+                mmBluetoothController = new BluetoothController(this, null);
 
                 ArrayMap detectedDevices = mmBluetoothController.getDetectedDevices();
 
@@ -84,15 +84,6 @@ public class DeviceActivity extends AppCompatActivity {
             }
         }
     }
-
-
-
-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-
-        }
-    };
 
     //---button onClick---
     public void onReturnButtonClick(View view){
