@@ -1,15 +1,11 @@
+# coding=utf-8
 import time
-from PIL import Image
 import io
+from PIL import Image
 from bluetooth import *
 
-def readimage(path):
-	count = os.stat(path).st_size / 2
-	with open(path, "rb") as f:
-		return bytearray(f.read())
-
 while True:
-    
+
     server_sock = BluetoothSocket(RFCOMM)
     server_sock.bind(("", PORT_ANY))
     server_sock.listen(1)
@@ -18,8 +14,8 @@ while True:
 
     uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
 
-    advertise_service(server_sock, "BluetoothDemoServer", service_id = uuid, service_classes = [ uuid, SERIAL_PORT_CLASS ], profiles = [ SERIAL_PORT_PROFILE ])
-
+    advertise_service(server_sock, "BluetoothDemoServer", service_id=uuid, service_classes=[
+                      uuid, SERIAL_PORT_CLASS], profiles=[SERIAL_PORT_PROFILE])
 
     print("Waiting for connection...")
 
@@ -30,18 +26,16 @@ while True:
     try:
         while True:
             data = client_sock.recv(1024)
-			if len(data) == 0: break
-			
-			image = Image.open(io.BytesIO(bytes))
-			image.save("./")
+            if len(data) == 0:
+                    break
+            image = Image.open(io.BytesIO(bytes))
+            image.save("./")
             print("Got message: image")
-            client_sock.send("Message was recieved OK! time: {} \n Got message: \n {} \n Message backwards: \n {}".format(time.time(), "Image", "asjkdlöjsdl"))
+            client_sock.send("Message was recieved OK! time: {} \n Got message: \n {} \n Message backwards: \n {}".format(time.time(), "Image", "asjkdlÃ¶jsdl"))
     except IOError:
         pass
 
     print("disconnected")
-    #file.close()
+    # file.close()
     client_sock.close()
     server_sock.close()
-
-	
