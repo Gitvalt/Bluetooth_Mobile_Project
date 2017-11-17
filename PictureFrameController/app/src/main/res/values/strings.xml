@@ -33,5 +33,7 @@
     <string name="returntolist">Return to list</string>
     <string name="discoverableLabel">Make this device discoverable</string>
     <string name="discoverable_device">Device is currently discoverable</string>
+    <string name="createconn">Create Connection</string>
+    <string name="connectionLabel">Device to Device connection status</string>
 
 </resources>

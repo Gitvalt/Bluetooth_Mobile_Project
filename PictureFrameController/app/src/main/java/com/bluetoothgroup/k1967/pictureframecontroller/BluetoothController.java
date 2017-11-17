@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -21,8 +22,10 @@ import android.util.Log;
 
 import com.bluetoothgroup.k1967.pictureframecontroller.MainActivity;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Created by Valtteri on 14.11.2017.
@@ -49,6 +52,7 @@ public class BluetoothController {
     private static final int a_ScanningTimer_s = 20; //20 seconds
     public static final int a_ScanningTimer = (1000 * a_ScanningTimer_s);
 
+    
     /**
      *
      * 1. Enable Bluetooth
@@ -359,4 +363,5 @@ public class BluetoothController {
             Log.e("Bluetooth_Pairing", "Error in unpairing devices", e);
         }
     }
+
 }
