@@ -3,6 +3,7 @@ package com.bluetoothgroup.k1967.pictureframecontroller;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -13,9 +14,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.Buffer;
 import java.util.UUID;
 
 public class DeviceActivity extends AppCompatActivity {
@@ -33,6 +36,12 @@ public class DeviceActivity extends AppCompatActivity {
     private static final String CREATING_B_SOCKET = "Creating Socket";
     public static final UUID myUUID = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
 
+    public enum MessageTypes {
+        ResponseToMessage,
+        ServerStatus
+
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +55,15 @@ public class DeviceActivity extends AppCompatActivity {
             @Override
             public void handleMessage(Message msg) {
                 Log.i("Handler", "Got message! " + msg);
+                Log.i("Handler_msg", "Got response of '" + MessageTypes.values()[msg.what] + "'");
+
+                byte[] buffer = new byte[2048];
+
+                buffer = (byte[])msg.obj;
+                int response = msg.arg1;
+
+                String responseStr = new String(buffer, 0, response);
+                Log.i("Handler", responseStr);
             }
         };
 
@@ -117,7 +135,7 @@ public class DeviceActivity extends AppCompatActivity {
         if(thread.isConnected)
         {
                 final handleSocket handleSocketThread = new handleSocket(thread.mmSocket);
-                handleSocketThread.getInputstream();
+                handleSocketThread.getInputstream(MessageTypes.ServerStatus);
                 handleSocketThread.sendMessage("Hello World");
         }
         else
@@ -262,10 +280,8 @@ public class DeviceActivity extends AppCompatActivity {
     public class handleSocket extends Thread {
 
         private BluetoothSocket mmSocket;
-
         private InputStream mmIputStream;
         private OutputStream mmOutputStream;
-
         private byte[] buffer = new byte[2048];
         private static final String Bluetooth_handler = "Bluetooth_handler";
 
@@ -299,7 +315,7 @@ public class DeviceActivity extends AppCompatActivity {
         /**
          * listen for communication from the device
          */
-        public void getInputstream() {
+        public void getInputstream(MessageTypes inqueryType) {
             try {
 
                 if(mmSocket == null || mmIputStream == null || mmOutputStream == null)
@@ -315,7 +331,8 @@ public class DeviceActivity extends AppCompatActivity {
                 String responseStr = new String(buffer, 0, response);
 
                 Log.i(Bluetooth_handler, "Received message: " + responseStr);
-                Message readMsg = handler.obtainMessage(0, response, -1, buffer);
+                Message readMsg = handler.obtainMessage(MessageTypes.valueOf(inqueryType.name()).ordinal(), response, -1, buffer);
+                readMsg.sendToTarget();
 
             }
             catch (IOException e)
@@ -340,13 +357,38 @@ public class DeviceActivity extends AppCompatActivity {
                 mmOutputStream.write(send);
 
                 //start listening for response
-                getInputstream();
+                getInputstream(MessageTypes.ResponseToMessage);
 
             } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
             }
-
         }
+
+        public void sendImage(Bitmap image)
+        {
+            if(mmSocket == null || mmIputStream == null || mmOutputStream == null)
+            {
+                Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
+                return;
+            }
+
+            try {
+
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                byte[] send = stream.toByteArray();
+
+                //send the information
+                mmOutputStream.write(send);
+
+                //start listening for response
+                getInputstream(MessageTypes.ResponseToMessage);
+
+            } catch (IOException e) {
+                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+            }
+        }
+
 
         @Override
         public void run()
