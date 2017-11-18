@@ -33,5 +33,13 @@
     <string name="returntolist">Return to list</string>
     <string name="discoverableLabel">Make this device discoverable</string>
     <string name="discoverable_device">Device is currently discoverable</string>
+    <string name="createconn">Create Connection</string>
+    <string name="connectionLabel">Device to Device connection status</string>
+    <string name="title_activity_picture_manager">PictureManagerActivity</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="test_conn">Test connection</string>
+    <string name="button_pic">Picture managment</string>
+    <string name="imageLabel">Currently shown image</string>
+    <string name="sendpicture">Send picture to Device</string>
 
 </resources>

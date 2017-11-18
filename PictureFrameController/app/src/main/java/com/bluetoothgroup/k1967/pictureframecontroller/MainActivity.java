@@ -182,9 +182,9 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
 
 
     //---Alert Dialogs---
-    public AlertDialog getBluetoothOffAlert(Activity main)
+    public AlertDialog getBluetoothOffAlert(@NonNull Activity main)
     {
-        AlertDialog.Builder bluetoothOffAlert = new AlertDialog.Builder( MainActivity.this)
+        AlertDialog.Builder bluetoothOffAlert = new AlertDialog.Builder(MainActivity.this)
                 .setTitle("Bluetooth is turned off")
                 .setMessage("Bluetooth should be turned on in order to use the application")
                 .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
@@ -198,7 +198,8 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         Log.i("Bluetooth", "Turn Bluetooth on");
-                        mBluetoothController.activateBluetooth(true);
+                        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                        adapter.enable();
                     }
                 });
 
@@ -261,6 +262,7 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
             Log.e("Discoverable", "Cannot make devices discoverable, This devices does not implement bluetooth!");
         }
     }
+
 
     //---interface implementation---
     //Device from recycler view is selected
@@ -365,8 +367,9 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
                         Log.w("Bluetooth","Bluetooth has been turned off");
                         getBluetoothOffAlert(getParent()).show();
                     }
-                    else {
-
+                    else
+                    {
+                        //we don't care about any other state changes, just on or off
                     }
                     break;
             }
