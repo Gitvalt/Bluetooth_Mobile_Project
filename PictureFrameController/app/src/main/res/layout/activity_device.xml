@@ -27,18 +27,17 @@
             android:textAlignment="center"
             android:textSize="24sp" />
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/physical_address_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+            android:layout_weight="1">
 
             <TextView
                 android:id="@+id/macAdress_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="0.50"
                 android:text="@string/physicalAdress"
                 android:textAlignment="viewStart"
                 android:textSize="14sp" />
@@ -47,12 +46,15 @@
                 android:id="@+id/addressView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="5"
+                android:layout_marginLeft=" "
+                android:layout_marginStart="10dp"
+                android:layout_toEndOf="@+id/macAdress_label"
+                android:layout_weight="0.50"
                 android:text="@string/placeholder"
                 android:textAlignment="viewStart"
                 android:textSize="14sp"
                 android:textStyle="italic" />
-        </LinearLayout>
+        </RelativeLayout>
 
         <LinearLayout
             android:id="@+id/pairing_layout"
@@ -100,8 +102,8 @@
                 android:id="@+id/connectionStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="5"
-                android:text="@string/placeholder"
+                android:layout_weight="10"
+                android:text="@string/unkown_status"
                 android:textAlignment="viewStart"
                 android:textSize="14sp" />
         </LinearLayout>
@@ -119,7 +121,15 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:onClick="onConnectButtonClick"
-                android:text="@string/createconn" />
+                android:text="@string/test_conn" />
+
+            <Button
+                android:id="@+id/pictureActButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onConnectButtonClick"
+                android:text="@string/button_pic" />
 
         </LinearLayout>
 

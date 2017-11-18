@@ -1,12 +1,20 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.ArrayMap;
@@ -38,7 +46,8 @@ public class DeviceActivity extends AppCompatActivity {
 
     public enum MessageTypes {
         ResponseToMessage,
-        ServerStatus
+        TestingConnStatus,
+        DataReceived
 
     };
 
@@ -53,20 +62,54 @@ public class DeviceActivity extends AppCompatActivity {
 
         handler = new Handler(){
             @Override
-            public void handleMessage(Message msg) {
-                Log.i("Handler", "Got message! " + msg);
-                Log.i("Handler_msg", "Got response of '" + MessageTypes.values()[msg.what] + "'");
+            public void handleMessage(Message msg)
+            {
 
-                byte[] buffer = new byte[2048];
-
-                buffer = (byte[])msg.obj;
+                MessageTypes messageType = MessageTypes.values()[msg.what];
                 int response = msg.arg1;
 
-                String responseStr = new String(buffer, 0, response);
-                Log.i("Handler", responseStr);
+                Log.i("Handler", "Got message! " + msg);
+                Log.i("Handler_msg", "Got response of '" + messageType + "'");
+
+                switch (messageType)
+                {
+                    case ResponseToMessage:
+                        byte[] buffer = new byte[2048];
+                        buffer = (byte[])msg.obj;
+                        String responseStr = new String(buffer, 0, response);
+                        Log.i("Handler", "Data received from server: " + responseStr);
+                        break;
+
+                    case TestingConnStatus:
+                        Log.i("Handler", "Connection test completed. Status: " + msg.obj);
+                        boolean conn_status = (boolean)msg.obj;
+
+                        if(conn_status)
+                        {
+                            setConnFieldColor(R.string.conn_available);
+                        }
+                        else
+                        {
+                            setConnFieldColor(R.string.conn_unavailable);
+                        }
+                        break;
+
+                    case DataReceived:
+                        byte[] buffer_2 = new byte[2048];
+                        buffer = (byte[])msg.obj;
+                        String responseStr_2 = new String(buffer_2, 0, response);
+
+                        Log.i("Handler", "Data received from server: " + responseStr_2);
+                        break;
+
+                    default:
+                        Log.i("Handler", "Unkown messagetype");
+                        break;
+                }
             }
         };
 
+        //fetching data from MainActivity
         Intent inputIntent = getIntent();
         if(inputIntent != null)
         {
@@ -116,6 +159,11 @@ public class DeviceActivity extends AppCompatActivity {
                 Log.e("DeviceActivity", "Device address not defined");
             }
         }
+
+        //finally register broadcast receiver
+        registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED)); //connection created
+        registerReceiver(mReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED)); //connection lost
+        registerReceiver(mReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)); //bluetooth on or off
     }
 
     //---button onClick---
@@ -132,20 +180,138 @@ public class DeviceActivity extends AppCompatActivity {
         final creatingConnectionThread thread = new creatingConnectionThread(mmSelectedDevice);
         thread.run();
 
+        /**
+         * Handle messages:
+         */
+
         if(thread.isConnected)
         {
                 final handleSocket handleSocketThread = new handleSocket(thread.mmSocket);
-                handleSocketThread.getInputstream(MessageTypes.ServerStatus);
-                handleSocketThread.sendMessage("Hello World");
+                handleSocketThread.getInputstream(MessageTypes.DataReceived);
+
+                //send results to handler
+                Message readMsg = handler.obtainMessage(MessageTypes.TestingConnStatus.ordinal(), true);
+                readMsg.sendToTarget();
         }
         else
         {
             Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+
+            //send results to handler
+            Message readMsg = handler.obtainMessage(MessageTypes.TestingConnStatus.ordinal(), false);
+            readMsg.sendToTarget();
         }
     }
 
+    //Send, view, receive pictures in picture_frame
+    public void onPictureManagerClick(View view)
+    {
+        Log.i("DeviceActivity", "Changing Activity");
+        Intent intent = new Intent(getApplicationContext(), PictureManagerActivity.class);
+        startActivity(intent);
+    }
 
-    //---Testing connection---
+    //---Label-element setup---
+    /**
+     * Setup connection status label and it's colors based on current status
+     * @param message_resource
+     */
+    private void setConnFieldColor(@NonNull int message_resource)
+    {
+        TextView view = (TextView)findViewById(R.id.connectionStatus);
+        view.setText(message_resource);
+
+        switch (message_resource)
+        {
+            case R.string.unkown_status:
+                view.setTextColor(Color.GRAY);
+                break;
+
+            case R.string.conn_unavailable:
+                view.setTextColor(Color.RED);
+                break;
+
+            case R.string.conn_available:
+                view.setTextColor(Color.GREEN);
+                break;
+
+            case R.string.conn_testing:
+                view.setTextColor(Color.BLACK);
+                break;
+        }
+
+
+    }
+
+
+    //---Broadcast receiver---
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+            switch (action)
+            {
+                case BluetoothDevice.ACTION_ACL_CONNECTED:
+                    Log.w("Receiver", "Created connection to device");
+                    setConnFieldColor(R.string.conn_available);
+                    break;
+
+                case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    Log.w("Receiver", "Connection to device lost");
+                    setConnFieldColor(R.string.conn_unavailable);
+                    break;
+
+                case BluetoothAdapter.ACTION_STATE_CHANGED:
+                    int tmp = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                    Log.i("ACTION_STATE", "Got state changed to '" + tmp);
+                    if(tmp == BluetoothAdapter.STATE_TURNING_ON)
+                    {
+                        Log.w("Bluetooth", "Bluetooth is turned on");
+                    }
+                    else if(tmp == BluetoothAdapter.STATE_TURNING_OFF)
+                    {
+                        Log.w("Bluetooth","Bluetooth has been turned off");
+                        getBluetoothOffAlert(getParent());
+                    }
+                    else
+                    {
+                        //we don't care about any other state changes, just on or off
+                    }
+                    break;
+            }
+        }
+    };
+
+    //---Alert Dialogs---
+    public AlertDialog getBluetoothOffAlert(@NonNull Activity main)
+    {
+        AlertDialog.Builder bluetoothOffAlert = new AlertDialog.Builder(DeviceActivity.this)
+                .setTitle("Bluetooth is turned off")
+                .setMessage("Bluetooth should be turned on in order to use the application")
+                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.i("Bluetooth", "Turn Bluetooth off");
+                        System.exit(0);
+                    }
+                })
+                .setPositiveButton("Turn on", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        Log.i("Bluetooth", "Turn Bluetooth on");
+                        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+                        adapter.enable();
+                    }
+                });
+
+        AlertDialog alertDialog = bluetoothOffAlert.create();
+
+        return alertDialog;
+    }
+
+    //---Internal Classes---
     public class creatingConnectionThread extends Thread
     {
         private BluetoothDevice mmDevice;
@@ -276,8 +442,8 @@ public class DeviceActivity extends AppCompatActivity {
         }
     }
 
-
-    public class handleSocket extends Thread {
+    public class handleSocket extends Thread
+    {
 
         private BluetoothSocket mmSocket;
         private InputStream mmIputStream;
