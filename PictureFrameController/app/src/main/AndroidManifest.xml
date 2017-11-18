@@ -30,10 +30,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".DeviceActivity" />
-        <activity
-            android:name=".PictureManagerActivity"
-            android:label="@string/title_activity_picture_manager"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+        <activity android:name=".PictureManagerActivity"></activity>
     </application>
 
 </manifest>

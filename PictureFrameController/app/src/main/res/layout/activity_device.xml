@@ -46,7 +46,6 @@
                 android:id="@+id/addressView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft=" "
                 android:layout_marginStart="10dp"
                 android:layout_toEndOf="@+id/macAdress_label"
                 android:layout_weight="0.50"
@@ -109,7 +108,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/buttons_layout"
+            android:id="@+id/buttons_layout_2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -128,7 +127,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:onClick="onConnectButtonClick"
+                android:onClick="onPictureManagerClick"
                 android:text="@string/button_pic" />
 
         </LinearLayout>
