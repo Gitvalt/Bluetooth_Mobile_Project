@@ -44,12 +44,7 @@ public class BluetoothController {
     private static final int BLUETOOTH_PERMISSION_TAG = 379;
     public static final int MAKE_DEVICE_DISCOVERABLE = 789;
 
-    private static final Handler mHandler = new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-
-        }
-    };
+    private static final Handler mHandler = new Handler();
 
     private static final int a_ScanningTimer_s = 20; //20 seconds
     public static final int a_ScanningTimer = (1000 * a_ScanningTimer_s);
@@ -384,8 +379,8 @@ public class BluetoothController {
             //send results to handler
             Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.TestingConnStatus.ordinal(), true);
             readMsg.sendToTarget();
-            handleSocketThread.cancel();
-        } else {
+        }
+        else {
             Log.e("Bluetooth_conn", "Connection not created, cannot continue");
 
             //send results to handler
@@ -394,6 +389,41 @@ public class BluetoothController {
         }
     }
 
+    public void sendImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler, @NonNull Bitmap image)
+    {
+        creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
+        connectionThread.run();
+
+        if (connectionThread.isConnected)
+        {
+            final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
+            boolean is_conn = handleSocketThread.testConnection();
+
+            //was response successfully read?
+            if(is_conn)
+            {
+                Log.i("Bluetooth_con", "Sending image to device");
+                handleSocketThread.sendImage(image);
+                handleSocketThread.getInputstream(DeviceActivity.MessageTypes.ImageReceived);
+            }
+            else
+            {
+                Log.e("Bluetooth_conn", "Could not read server response");
+
+                //send results to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 2, 0, false);
+                readMsg.sendToTarget();
+            }
+        }
+        else
+        {
+            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+
+            //send results to handler
+            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 1,0, false);
+            readMsg.sendToTarget();
+        }
+    }
 
     //---Internal Classes---
     public class creatingConnectionThread extends Thread
@@ -561,6 +591,65 @@ public class BluetoothController {
             }
         }
 
+
+        @Override
+        public void run()
+        {
+            mmBluetoothAdapter.cancelDiscovery();
+        }
+
+        public boolean connect(){
+            try
+            {
+                mmSocket.connect();
+
+                if(mmSocket.isConnected())
+                {
+                    Log.i("Socket_Connection", "Bluetooth socket has established connection with server");
+                    return true;
+                }
+                else
+                {
+                    Log.e("Socket_Connection", "Bluetooth socket could not connect to server", new Exception("Connection not established"));
+                    return false;
+                }
+
+            }
+            catch (Exception error)
+            {
+                Log.e("Socket_Connection", "Error in connecting to server", error);
+                return false;
+            }
+        }
+
+        public boolean testConnection(){
+
+                if(getInput() == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+        }
+
+        public void closeConnection()
+        {
+            try
+            {
+                if(mmSocket.isConnected())
+                {
+                    mmSocket.close();
+                    Log.i(Bluetooth_handler, "Connection to device closed");
+                }
+            }
+            catch (IOException ioerror)
+            {
+                Log.e(Bluetooth_handler, "Connection could not be closed", ioerror);
+            }
+        }
+
         /**
          * listen for communication from the device
          */
@@ -590,6 +679,28 @@ public class BluetoothController {
             }
         }
 
+        public String getInput() {
+            try {
+                if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
+                    Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
+                    return null;
+                }
+
+                buffer = new byte[2048];
+
+                int response = mmInputStream.read(buffer);
+
+                String responseStr = new String(buffer, 0, response);
+
+                Log.i(Bluetooth_handler, "Received message: " + responseStr);
+                return responseStr;
+            }
+            catch(IOException e)
+            {
+                Log.e(Bluetooth_handler, "Couldn't receive msg", e);
+                return null;
+            }
+        }
 
         public void sendMessage(String message)
         {
@@ -635,53 +746,6 @@ public class BluetoothController {
 
             } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
-            }
-        }
-
-
-        @Override
-        public void run()
-        {
-            mmBluetoothAdapter.cancelDiscovery();
-        }
-
-        public boolean connect(){
-            try
-            {
-                mmSocket.connect();
-
-                if(mmSocket.isConnected())
-                {
-                    Log.i("Socket_Connection", "Bluetooth socket has established connection with server");
-                    return true;
-                }
-                else
-                {
-                    Log.e("Socket_Connection", "Bluetooth socket could not connect to server", new Exception("Connection not established"));
-                    return false;
-                }
-
-            }
-            catch (Exception error)
-            {
-                Log.e("Socket_Connection", "Error in connecting to server", error);
-                return false;
-            }
-        }
-
-        public void closeConnection()
-        {
-            try
-            {
-                if(mmSocket.isConnected())
-                {
-                    mmSocket.close();
-                    Log.i(Bluetooth_handler, "Connection to device closed");
-                }
-            }
-            catch (IOException ioerror)
-            {
-                Log.e(Bluetooth_handler, "Connection could not be closed", ioerror);
             }
         }
 

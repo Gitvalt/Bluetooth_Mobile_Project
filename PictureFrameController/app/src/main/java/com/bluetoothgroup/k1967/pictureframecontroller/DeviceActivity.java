@@ -44,7 +44,8 @@ public class DeviceActivity extends AppCompatActivity {
     public enum MessageTypes {
         ResponseToMessage,
         TestingConnStatus,
-        DataReceived
+        DataReceived,
+        ImageReceived
 
     };
 
@@ -182,7 +183,12 @@ public class DeviceActivity extends AppCompatActivity {
     public void onPictureManagerClick(View view)
     {
         Log.i("DeviceActivity", "Changing Activity");
+        Bundle bundle = new Bundle();
+        bundle.putString("DeviceAddress", mmSelectedDevice.getAddress());
+
         Intent intent = new Intent(getApplicationContext(), PictureManagerActivity.class);
+        intent.putExtras(bundle);
+
         startActivity(intent);
     }
 
