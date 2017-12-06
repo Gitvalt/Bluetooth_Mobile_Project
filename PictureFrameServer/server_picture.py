@@ -30,6 +30,7 @@ while True:
         msgLenght = 0 
         imgType = None
         while True:
+            #Default input mode (expect string message (mode, length, type))
             if command == "default":
                 try:
                     #try to parse input as utf-8 message.
@@ -47,8 +48,13 @@ while True:
                     command = msg[0]
                     msgLenght = msg[1]
                     imgType = msg[2]
+
+                    if command == "Picture":
+                            client_sock.send("Ready for picture")
+
                 except Exception:
                     pass
+
             #if we are expecting a picture
             elif command == "Picture":
                 #print downloading milestones
@@ -77,7 +83,8 @@ while True:
                     print "Downloading...({} out of {})".format(len(collection), msgLenght)
 
             elif command == "Status":
-                client_sock.send("{},{},{}".format("Status","All OK",time.time()))       
+                client_sock.send("{},{},{}".format("Status","All OK",time.time()))
+                   
                 
     except IOError as err:
         print "Error has happened! {}".format(err)

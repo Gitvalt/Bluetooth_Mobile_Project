@@ -716,30 +716,52 @@ public class BluetoothController {
                 //send the information
                 mmOutputStream.write(send);
 
-                //start listening for response
-                getInputstream(DeviceActivity.MessageTypes.ResponseToMessage);
-
             } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
             }
         }
 
-        public void sendImage(Bitmap image)
+        /**
+         * Client - Server picture upload process:
+         * 1. Inform server that image is coming
+         * 2. Wait for a moment
+         * 3. Start sending image
+         * 4. Wait for response that upload has been completed
+         * @param image
+         */
+        public void sendImage(@NonNull Bitmap image)
         {
             if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
             {
-                Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
+                Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
                 return;
             }
 
-            try {
-
+            try
+            {
+                //convert bitmap to bytearray
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 image.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] send = stream.toByteArray();
 
+                Log.i("Sending picture", "Bytes to be sent: " + send.length);
+
+                //inform server that image is being uploaded ("Picture", bytearray length, imagetype)
+                sendMessage("Picture," + send.length + "," + "PNG");
+
+                //should get "Ready for picture"
+                String responseFromServer = getInput();
+
+                try
+                {
+                    sleep(2000);
+                } catch (Exception e){
+
+                }
                 //send the information
                 mmOutputStream.write(send);
+
+                Log.i("Sending picture", "Stopped sending...");
 
                 //start listening for response
                 getInputstream(DeviceActivity.MessageTypes.ResponseToMessage);
