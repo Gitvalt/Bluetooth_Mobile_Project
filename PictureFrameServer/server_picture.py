@@ -4,6 +4,7 @@ import io
 from PIL import Image
 from bluetooth import *
 
+
 while True:
 
     server_sock = BluetoothSocket(RFCOMM)
@@ -22,18 +23,65 @@ while True:
     client_sock, client_info = server_sock.accept()
     print("New connection: ", client_info)
     client_sock.send("Connection successful!")
-    #file = open("test.jpg", "wb+")
+    
     try:
+        collection = ""
+        command = "default"
+        msgLenght = 0 
+        imgType = None
         while True:
-            data = client_sock.recv(1024)
-            if len(data) == 0:
-                    break
-            image = Image.open(io.BytesIO(bytes))
-            image.save("./")
-            print("Got message: image")
-            client_sock.send("Message was recieved OK! time: {} \n Got message: \n {} \n Message backwards: \n {}".format(time.time(), "Image", "asjkdlÃ¶jsdl"))
-    except IOError:
-        pass
+            if command == "default":
+                try:
+                    #try to parse input as utf-8 message.
+                    print "default"
+                    data = client_sock.recv(2000)
+                    data_str = data.decode("utf-8")
+                    
+                    #print received input
+                    print data
+
+                    # parse input command 
+                    # Usually prepares frame for reading picture bytearray:
+                    # (Picture, how many bytes to be expected, pictures extension(png, jpeg...))
+                    msg = data_str.split(",")
+                    command = msg[0]
+                    msgLenght = msg[1]
+                    imgType = msg[2]
+                except Exception:
+                    pass
+            #if we are expecting a picture
+            elif command == "Picture":
+                #print downloading milestones
+                print "picture", msgLenght, imgType
+                size = len(collection)
+                print size
+
+                #if current bytesize is same size as the expected picture bytearray size
+                if size == int(msgLenght):
+                    print "data received!"
+                    client_sock.send("Picture,OK,{}".format(time.time()))       
+                    item = Image.open(io.BytesIO(collection))
+                    item.save("./media/imported.png")
+                    command = "default"
+                    print "finished"
+
+                #if too much data has been received
+                elif size > int(msgLenght):
+                    print "too much data! Mobile app should not send extra data until data transfer has been confirmed by server"
+                    client_sock.send("{},{},{}".format("ERROR","Too much data",time.time()))       
+                    
+                #not same size --> downloading is still ongoing
+                else:
+                    data = client_sock.recv(50000)
+                    collection += (data)
+                    print "Downloading...({} out of {})".format(len(collection), msgLenght)
+
+            elif command == "Status":
+                client_sock.send("{},{},{}".format("Status","All OK",time.time()))       
+                
+    except IOError as err:
+        print "Error has happened! {}".format(err)
+
 
     print("disconnected")
     # file.close()
