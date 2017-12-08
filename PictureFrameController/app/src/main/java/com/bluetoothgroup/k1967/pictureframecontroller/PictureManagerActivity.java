@@ -1,7 +1,5 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,11 +8,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -131,6 +129,18 @@ public class PictureManagerActivity extends AppCompatActivity {
         }
     }
 
+
+    public void GetImageButton(View view)
+    {
+        try {
+            mmBluetoothController.getImage(mmDevice, handler, view);
+        }
+        catch (Exception error)
+        {
+            Log.e("ButtonClick", ""+error);
+        }
+    }
+
     public void onSendToDeviceButtonClick(View view)
     {
         if(mmSelectedImage != null)
@@ -171,6 +181,7 @@ public class PictureManagerActivity extends AppCompatActivity {
                         }
                         else
                         {
+
                             receivedImage.setImageBitmap(selectedImage);
                             mmSelectedImage = selectedImage;
                         }
