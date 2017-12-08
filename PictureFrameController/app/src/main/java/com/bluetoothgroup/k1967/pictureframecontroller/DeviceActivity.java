@@ -45,9 +45,12 @@ public class DeviceActivity extends AppCompatActivity {
         ResponseToMessage,
         TestingConnStatus,
         DataReceived,
-        ImageReceived
+        ImageReceived,
+        ImageSent
 
-    };
+    }
+
+    ;
 
     //---Constructor---
     @Override
@@ -55,47 +58,41 @@ public class DeviceActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device);
 
-        deviceHeader = (TextView)findViewById(R.id.deviceHeader);
-        deviceAddress = (TextView)findViewById(R.id.addressView);
-        devicePairing = (TextView)findViewById(R.id.pairingStatus);
+        deviceHeader = (TextView) findViewById(R.id.deviceHeader);
+        deviceAddress = (TextView) findViewById(R.id.addressView);
+        devicePairing = (TextView) findViewById(R.id.pairingStatus);
 
-        handler = new Handler(){
+        handler = new Handler() {
             @Override
-            public void handleMessage(Message msg)
-            {
+            public void handleMessage(Message msg) {
 
                 MessageTypes messageType = MessageTypes.values()[msg.what];
                 int response = msg.arg1;
 
-                Log.i("Handler", "Got message! " + msg);
-                Log.i("Handler_msg", "Got response of '" + messageType + "'");
+                Log.v("Handler", "Got message! " + msg);
+                Log.v("Handler_msg", "Got response of '" + messageType + "'");
 
-                switch (messageType)
-                {
+                switch (messageType) {
                     case ResponseToMessage:
-                        byte[] buffer = new byte[2048];
-                        buffer = (byte[])msg.obj;
-                        String responseStr = new String(buffer, 0, response);
+                        String responseStr = (String)msg.obj;
                         Log.i("Handler", "Data received from server: " + responseStr);
                         break;
 
+                    //when results of connection testing are broadcasted
                     case TestingConnStatus:
                         Log.i("Handler", "Connection test completed. Status: " + msg.obj);
-                        boolean conn_status = (boolean)msg.obj;
+                        boolean conn_status = (boolean) msg.obj;
 
-                        if(conn_status)
-                        {
+                        if (conn_status) {
                             setConnFieldColor(R.string.conn_available);
-                        }
-                        else
-                        {
+                        } else {
                             setConnFieldColor(R.string.conn_unavailable);
                         }
                         break;
 
                     case DataReceived:
                         byte[] buffer_2 = new byte[2048];
-                        buffer = (byte[])msg.obj;
+                        byte[] buffer = (byte[]) msg.obj;
                         String responseStr_2 = new String(buffer_2, 0, response);
 
                         Log.i("Handler", "Data received from server: " + responseStr_2);
@@ -110,26 +107,22 @@ public class DeviceActivity extends AppCompatActivity {
 
         //fetching data from MainActivity
         Intent inputIntent = getIntent();
-        if(inputIntent != null)
-        {
+        if (inputIntent != null) {
 
             deviceHeader.setText(inputIntent.getStringExtra("deviceName"));
             String device_address = inputIntent.getStringExtra("deviceAddress");
-            if(device_address != null)
-            {
+            if (device_address != null) {
                 deviceAddress.setText(device_address);
                 mmBluetoothController = new BluetoothController(this, null);
 
                 ArrayMap detectedDevices = mmBluetoothController.getDetectedDevices();
 
-                if(detectedDevices.containsKey(device_address))
-                {
-                    mmSelectedDevice = (BluetoothDevice)detectedDevices.get(device_address);
+                if (detectedDevices.containsKey(device_address)) {
+                    mmSelectedDevice = (BluetoothDevice) detectedDevices.get(device_address);
 
                     int bond_state;
 
-                    switch (mmSelectedDevice.getBondState())
-                    {
+                    switch (mmSelectedDevice.getBondState()) {
                         case BluetoothDevice.BOND_BONDED:
                             bond_state = R.string.Bonded;
                             break;
@@ -147,14 +140,10 @@ public class DeviceActivity extends AppCompatActivity {
                     }
 
                     devicePairing.setText(bond_state);
-                }
-                else
-                {
+                } else {
                     Log.e("DeviceActivity", "Selected devices is not found");
                 }
-            }
-            else
-            {
+            } else {
                 Log.e("DeviceActivity", "Device address not defined");
             }
         }
@@ -167,21 +156,19 @@ public class DeviceActivity extends AppCompatActivity {
 
 
     //---button onClick---
-    public void onReturnButtonClick(View view){
+    public void onReturnButtonClick(View view) {
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         startActivity(intent);
     }
 
-    public void onConnectButtonClick(View view)
-    {
-        TextView connectView = (TextView)findViewById(R.id.connectionStatus);
+    public void onConnectButtonClick(View view) {
+        TextView connectView = (TextView) findViewById(R.id.connectionStatus);
         connectView.setText(R.string.conn_testing);
         mmBluetoothController.testConnection(mmSelectedDevice, handler);
     }
 
     //Send, view, receive pictures in picture_frame
-    public void onPictureManagerClick(View view)
-    {
+    public void onPictureManagerClick(View view) {
         Log.i("DeviceActivity", "Changing Activity");
         Bundle bundle = new Bundle();
         bundle.putString("DeviceAddress", mmSelectedDevice.getAddress());
@@ -193,17 +180,17 @@ public class DeviceActivity extends AppCompatActivity {
     }
 
     //---Label-element setup---
+
     /**
      * Setup connection status label and it's colors based on current status
+     *
      * @param message_resource
      */
-    private void setConnFieldColor(@NonNull int message_resource)
-    {
-        TextView view = (TextView)findViewById(R.id.connectionStatus);
+    private void setConnFieldColor(@NonNull int message_resource) {
+        TextView view = (TextView) findViewById(R.id.connectionStatus);
         view.setText(message_resource);
 
-        switch (message_resource)
-        {
+        switch (message_resource) {
             case R.string.unkown_status:
                 view.setTextColor(Color.GRAY);
                 break;
@@ -232,32 +219,24 @@ public class DeviceActivity extends AppCompatActivity {
             String action = intent.getAction();
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-            switch (action)
-            {
+            switch (action) {
                 case BluetoothDevice.ACTION_ACL_CONNECTED:
                     Log.w("Receiver", "Created connection to device");
-                    setConnFieldColor(R.string.conn_available);
                     break;
 
                 case BluetoothDevice.ACTION_ACL_DISCONNECTED:
                     Log.w("Receiver", "Connection to device lost");
-                    setConnFieldColor(R.string.conn_unavailable);
                     break;
 
                 case BluetoothAdapter.ACTION_STATE_CHANGED:
                     int tmp = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                     Log.i("ACTION_STATE", "Got state changed to '" + tmp);
-                    if(tmp == BluetoothAdapter.STATE_TURNING_ON)
-                    {
+                    if (tmp == BluetoothAdapter.STATE_TURNING_ON) {
                         Log.w("Bluetooth", "Bluetooth is turned on");
-                    }
-                    else if(tmp == BluetoothAdapter.STATE_TURNING_OFF)
-                    {
-                        Log.w("Bluetooth","Bluetooth has been turned off");
+                    } else if (tmp == BluetoothAdapter.STATE_TURNING_OFF) {
+                        Log.w("Bluetooth", "Bluetooth has been turned off");
                         getBluetoothOffAlert(getParent());
-                    }
-                    else
-                    {
+                    } else {
                         //we don't care about any other state changes, just on or off
                     }
                     break;
@@ -267,8 +246,7 @@ public class DeviceActivity extends AppCompatActivity {
 
 
     //---Alert Dialogs---
-    public AlertDialog getBluetoothOffAlert(@NonNull Activity main)
-    {
+    public AlertDialog getBluetoothOffAlert(@NonNull Activity main) {
         AlertDialog.Builder bluetoothOffAlert = new AlertDialog.Builder(DeviceActivity.this)
                 .setTitle("Bluetooth is turned off")
                 .setMessage("Bluetooth should be turned on in order to use the application")

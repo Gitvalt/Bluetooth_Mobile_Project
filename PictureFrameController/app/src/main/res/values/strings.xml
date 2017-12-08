@@ -41,5 +41,7 @@
     <string name="button_pic">Picture managment</string>
     <string name="imageLabel">Currently shown image</string>
     <string name="sendpicture">Send picture to Device</string>
+    <string name="selectedImage">Selected Image</string>
+    <string name="ReturnView">Return to view</string>
 
 </resources>

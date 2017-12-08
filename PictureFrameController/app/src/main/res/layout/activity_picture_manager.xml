@@ -7,56 +7,86 @@
     tools:context="com.bluetoothgroup.k1967.pictureframecontroller.PictureManagerActivity">
 
     <LinearLayout
-        android:id="@+id/currentImageLayout"
-        android:layout_width="wrap_content"
+        android:id="@+id/linearLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/capturedImageView"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/imageLabel"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/currentImageLayout"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:text="@string/imageLabel" />
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/currentImageView"
-            android:layout_width="173dp"
-            android:layout_height="151dp"
-            android:layout_margin="0dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginLeft="10dp"
-            android:layout_marginRight="10dp"
-            android:layout_marginTop="0dp"
-            android:adjustViewBounds="false"
-            app:srcCompat="@android:drawable/ic_menu_report_image" />
+            <TextView
+                android:id="@+id/imageLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:text="@string/imageLabel" />
 
+            <ImageView
+                android:id="@+id/currentImageView"
+                android:layout_width="173dp"
+                android:layout_height="151dp"
+                android:layout_margin="0dp"
+                android:layout_marginBottom="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="0dp"
+                android:adjustViewBounds="false"
+                android:contentDescription="picture shown in @string/discoverable_device"
+                app:srcCompat="@android:drawable/ic_menu_report_image" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            app:layout_constraintTop_toBottomOf="@+id/currentImageLayout">
+
+            <TextView
+                android:id="@+id/imageLabel2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:text="@string/selectedImage" />
+
+            <ImageView
+                android:id="@+id/capturedImageView"
+                android:layout_width="173dp"
+                android:layout_height="151dp"
+                android:layout_margin="0dp"
+                android:layout_marginBottom="24dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="68dp"
+                android:adjustViewBounds="false"
+                app:layout_constraintBottom_toTopOf="@+id/buttonLayout"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.502"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/currentImageLayout"
+                app:srcCompat="@android:drawable/ic_menu_report_image" />
+        </LinearLayout>
     </LinearLayout>
-
-    <ImageView
-        android:id="@+id/capturedImageView"
-        android:layout_width="142dp"
-        android:layout_height="126dp"
-        android:layout_margin="0dp"
-        android:layout_marginBottom="24dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="68dp"
-        android:adjustViewBounds="false"
-        app:layout_constraintBottom_toTopOf="@+id/buttonLayout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/currentImageLayout"
-        app:srcCompat="@android:drawable/ic_menu_report_image" />
 
     <LinearLayout
         android:id="@+id/buttonLayout"
@@ -64,11 +94,12 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/capturedImageView">
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/takeCameraPictureButton"
@@ -107,7 +138,7 @@
 
     <Button
         android:id="@+id/sendPictureButton"
-        android:layout_width="wrap_content"
+        android:layout_width="200dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
@@ -117,5 +148,19 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonLayout" />
+
+    <Button
+        android:id="@+id/returnButton"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="20dp"
+        android:onClick="onReturnButtonClick"
+        android:text="@string/ReturnView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sendPictureButton" />
 
 </android.support.constraint.ConstraintLayout>

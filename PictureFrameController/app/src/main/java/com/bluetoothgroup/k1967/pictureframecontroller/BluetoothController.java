@@ -1,4 +1,6 @@
-package com.bluetoothgroup.k1967.pictureframecontroller;;
+package com.bluetoothgroup.k1967.pictureframecontroller;
+
+;
 
 import android.Manifest;
 import android.app.Activity;
@@ -12,20 +14,28 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.PermissionChecker;
+import android.support.v4.content.res.TypedArrayUtils;
 import android.util.ArrayMap;
+import android.util.Base64;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,29 +61,25 @@ public class BluetoothController {
 
     private static final String CREATING_B_SOCKET = "Creating Socket";
     public static final UUID myUUID = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee");
-    
+
     /**
-     *
      * 1. Enable Bluetooth
      * 2. Ask Permissions
      * 3. Register Service
      * 4. Find devices
      * 5. Pair with devices
-     *
      */
 
     //---Constructor---
-    public BluetoothController(Activity activity, @Nullable BroadcastReceiver broadC)
-    {
-        if(DetectedDevices == null) {
+    public BluetoothController(Activity activity, @Nullable BroadcastReceiver broadC) {
+        if (DetectedDevices == null) {
             DetectedDevices = new ArrayMap<>();
         }
         mmParent = activity;
         mmBroadcastReceiver = broadC;
 
         mmBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if(mmBluetoothAdapter == null)
-        {
+        if (mmBluetoothAdapter == null) {
             throw new NullPointerException("This devices does not support bluetooth connections");
         }
     }
@@ -90,18 +96,14 @@ public class BluetoothController {
 
 
     //---Enable Bluetooth---
-    public void activateBluetooth(boolean setState){
+    public void activateBluetooth(boolean setState) {
 
         //turn on or off?
-        if(setState)
-        {
+        if (setState) {
             //if bluetooth is wanted to be activated
-            if (mmBluetoothAdapter.isEnabled())
-            {
+            if (mmBluetoothAdapter.isEnabled()) {
                 Log.i("ENABLE_BLUETOOTH", "Bluetooth is already on!");
-            }
-            else
-            {
+            } else {
                 //Not on --> ask to be turned on --> get result in onActivityResult
                 Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 mmParent.startActivityForResult(enableBluetooth, ACTIVATE_BLUETOOTH_TAG);
@@ -110,16 +112,12 @@ public class BluetoothController {
         }
 
         //off
-        else
-        {
-            if (mmBluetoothAdapter.isEnabled())
-            {
+        else {
+            if (mmBluetoothAdapter.isEnabled()) {
                 //Bluetooth is on --> shutdown
                 mmBluetoothAdapter.disable();
                 mmParent.unregisterReceiver(mmBroadcastReceiver);
-            }
-            else
-            {
+            } else {
                 //if bluetooth is already turned off
                 Log.i("ENABLE_BLUETOOTH", "Bluetooth is already off!");
             }
@@ -128,8 +126,7 @@ public class BluetoothController {
 
 
     //---Bluetooth Permissions---
-    public boolean bluetoothPermissions()
-    {
+    public boolean bluetoothPermissions() {
 
         Context mContext = mmParent.getApplicationContext();
 
@@ -145,18 +142,14 @@ public class BluetoothController {
         /**
          * If some of the necessary permissions are not granted, App will ask the user for them...
          */
-        if(selfPermission != granted || adminPermission != granted || fineLocation != granted || coarseLocation != granted)
-        {
+        if (selfPermission != granted || adminPermission != granted || fineLocation != granted || coarseLocation != granted) {
             return false;
-        }
-        else
-        {
+        } else {
             return true;
         }
     }
 
-    public void askPermissions()
-    {
+    public void askPermissions() {
         /**
          * Show alert dialog informing what permissions are required for this app to work
          */
@@ -167,8 +160,7 @@ public class BluetoothController {
 
         alert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialogInterface, int i)
-            {
+            public void onClick(DialogInterface dialogInterface, int i) {
                 //Send the required permissions permissionRequest
                 ActivityCompat.requestPermissions(mmParent, new String[]{
                         Manifest.permission.BLUETOOTH,
@@ -193,7 +185,7 @@ public class BluetoothController {
 
 
     //---Register broadcasts---
-    public void registerBluetoothService(){
+    public void registerBluetoothService() {
         BroadcastReceiver receiver = mmBroadcastReceiver;
         mmParent.registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
         mmParent.registerReceiver(receiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
@@ -203,13 +195,11 @@ public class BluetoothController {
 
 
     //---Finding devices---
-    public void findDevices()
-    {
+    public void findDevices() {
         try {
             mmBluetoothAdapter.cancelDiscovery();
 
-            if (!mmBluetoothAdapter.isEnabled())
-            {
+            if (!mmBluetoothAdapter.isEnabled()) {
                 Log.e("FINDING_DEVICES", "Cant find devices. Bluetooth is Disabled!");
                 activateBluetooth(true);
                 return;
@@ -218,12 +208,9 @@ public class BluetoothController {
             DetectedDevices.clear();
             addPairedDevicesToList();
 
-            if (!bluetoothPermissions())
-            {
+            if (!bluetoothPermissions()) {
                 askPermissions();
-            }
-            else
-            {
+            } else {
 
                 registerBluetoothService();
 
@@ -243,71 +230,55 @@ public class BluetoothController {
                 mHandler.postDelayed(stopScanning, a_ScanningTimer);
                 Log.i("FINDING_DEVICES", "Started to scan surroundings for new bluetooth devices");
             }
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("FINDING_DEVICES", "Finding new devices has failed!", error);
         }
     }
 
-    public void makeDiscoverable(int seconds)
-    {
+    public void makeDiscoverable(int seconds) {
         //Discover this devices
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, seconds);
         mmParent.startActivityForResult(discoverableIntent, MAKE_DEVICE_DISCOVERABLE);
     }
 
-    public void addDeviceToList(@NonNull BluetoothDevice mDevice)
-    {
-        try
-        {
+    public void addDeviceToList(@NonNull BluetoothDevice mDevice) {
+        try {
             DetectedDevices.put(mDevice.getAddress(), mDevice);
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("Adding Device", "Adding device to list has failed", error);
         }
     }
 
-    public void removeDeviceFromList(@NonNull BluetoothDevice mDevice)
-    {
-        try
-        {
+    public void removeDeviceFromList(@NonNull BluetoothDevice mDevice) {
+        try {
             DetectedDevices.remove(mDevice.getAddress());
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("Removing Device", "Removing device from list has failed", error);
         }
     }
 
-    public void clearDeviceList(){
+    public void clearDeviceList() {
         DetectedDevices.clear();
     }
 
-    private void addPairedDevicesToList()
-    {
+    private void addPairedDevicesToList() {
         ArrayMap<String, BluetoothDevice> pairedDevices = getPairedDevices();
 
-        if(pairedDevices == null){
+        if (pairedDevices == null) {
             Log.w("Paired_devices", "No paired devices to add");
-        }
-        else
-        {
+        } else {
             //put all found devices to main arraymap
             DetectedDevices.putAll(pairedDevices);
             Log.i("Paired_devices", "Devices added to main array");
         }
     }
 
-    public ArrayMap getPairedDevices()
-    {
+    public ArrayMap getPairedDevices() {
         Set<BluetoothDevice> devices = mmBluetoothAdapter.getBondedDevices();
         ArrayMap<String, BluetoothDevice> tmp = new ArrayMap<>();
 
-        if(devices.size() > 0)
-        {
+        if (devices.size() > 0) {
 
             for (BluetoothDevice device : devices) {
                 tmp.put(device.getAddress(), device);
@@ -315,9 +286,7 @@ public class BluetoothController {
 
             Log.i("Paired_Devices", "Found '" + tmp.size() + "' paired devices");
             return tmp;
-        }
-        else
-        {
+        } else {
             Log.w("Paired_Devices", "No paired devices available");
             return null;
         }
@@ -326,153 +295,258 @@ public class BluetoothController {
 
     //---Pairing with device---
     @NonNull
-    private void PairDevices(BluetoothDevice mDevice)
-    {
-        try
-        {
+    private void PairDevices(BluetoothDevice mDevice) {
+        try {
             if (mmBluetoothAdapter.getBondedDevices().contains(mDevice)) {
                 Log.e("Bluetooth_Pairing", "Device has already been paired with");
             } else {
                 mDevice.createBond();
                 Log.i("Bluetooth_Pairing", "Pairing devices completed!");
             }
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("Bluetooth_Pairing", "Unkown error with pairing", error);
         }
     }
 
     @NonNull
-    private void UnPairDevices(BluetoothDevice mDevice)
-    {
+    private void UnPairDevices(BluetoothDevice mDevice) {
         try {
 
-            if(!mmBluetoothAdapter.getBondedDevices().contains(mDevice))
-            {
+            if (!mmBluetoothAdapter.getBondedDevices().contains(mDevice)) {
                 Log.e("Bluetooth_Pairing", "Device has no bond with this device");
             }
 
             Method m = mDevice.getClass().getMethod("removeBond", (Class[]) null);
             m.invoke(mDevice, (Object[]) null);
             Log.i("Bluetooth_Pairing", "Unpairing devices completed!");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Log.e("Bluetooth_Pairing", "Error in unpairing devices", e);
         }
     }
 
 
     //---Communicating with device---
-    public void testConnection(@NonNull BluetoothDevice mdevice, @NonNull Handler handler) {
-        final creatingConnectionThread thread = new creatingConnectionThread(mdevice);
+    public boolean testConnection(@NonNull BluetoothDevice mDevice, @NonNull Handler handler) {
+
+        final creatingConnectionThread thread = new creatingConnectionThread(mDevice);
         thread.run();
 
         /**
-         * Handle messages:
+         * If thread.run() was successfull --> thread.isConnected == true
          */
         if (thread.isConnected) {
             final handleSocket handleSocketThread = new handleSocket(thread.mmSocket, handler);
-            handleSocketThread.getInputstream(DeviceActivity.MessageTypes.DataReceived);
 
-            //send results to handler
-            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.TestingConnStatus.ordinal(), true);
-            readMsg.sendToTarget();
-        }
-        else {
-            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+            //get welcoming message
+            String initial_response = handleSocketThread.getInput();
+
+            //ask for current server status
+            handleSocketThread.sendMessage("Status", "0", "0");
+            String getMessage = handleSocketThread.getInput();
+
+            Log.i("Test", initial_response);
+            Log.i("Test", getMessage);
+
+            //are status codes present?
+            boolean t1 = initial_response.split(",")[1].equals("200");
+            boolean t2 = getMessage.split(",")[1].equals("200");
+
+            if (t1 && t2) {
+                //send results to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.TestingConnStatus.ordinal(), true);
+                readMsg.sendToTarget();
+
+                thread.cancel();
+                handleSocketThread.cancel();
+                return true;
+            } else {
+                //could not get welcoming and status messages from server --> is occupied or bugged
+                thread.cancel();
+                handleSocketThread.cancel();
+
+                //send results to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.TestingConnStatus.ordinal(), false);
+                readMsg.sendToTarget();
+                return false;
+            }
+        } else {
+            //Connection to server was not possible --> cancel and broadcast failure msg
+            Log.e("Bluetooth_conn", "Connection was not created, cannot continue");
+
+            thread.cancel();
 
             //send results to handler
             Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.TestingConnStatus.ordinal(), false);
             readMsg.sendToTarget();
+            return false;
+        }
+
+    }
+
+    public void sendImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler, @NonNull Bitmap image) {
+
+        if (testConnection(mdevice, handler)) {
+            creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
+            connectionThread.run();
+
+            if (connectionThread.isConnected) {
+                final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
+                boolean is_conn = handleSocketThread.testConnection();
+
+                //test connection
+                if (is_conn) {
+                    Log.i("Bluetooth_con", "Sending image to device");
+                    handleSocketThread.sendImage(image);
+                    handleSocketThread.closeConnection();
+                } else {
+                    Log.e("Bluetooth_conn", "Could not read server response");
+                    connectionThread.cancel();
+                    handleSocketThread.closeConnection();
+
+                    //send results to handler
+                    Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageSent.ordinal(), 2, 0, false);
+                    readMsg.sendToTarget();
+                }
+            }
+
+            //connecting to server has failed
+            else {
+                Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+
+                //send results to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageSent.ordinal(), 1, 0, false);
+                readMsg.sendToTarget();
+            }
+        } else {
+            Log.e("Picture upload", "Uploading picture has failed. Testing connection was unsuccessful");
         }
     }
 
-    public void sendImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler, @NonNull Bitmap image)
-    {
+    /**
+     * 1. Creates a connection thread
+     * 2. checks thread created a connection to server --> Socket exists
+     * 3. Creates handling thread and tests connectino
+     * if testing ok:
+     * 4. gets server status
+     * 5. Informs server that we want to download current picture
+     * 6. Reads response and reads the server status, length of image and extension of the image.
+     * 7. starts handlethreads image reading
+     * 8. returns returned image
+     * if testing failed
+     *
+     * @param mdevice
+     * @param handler
+     * @return
+     */
+    public Bitmap getCurrentlyShownPic(@NonNull BluetoothDevice mdevice, @NonNull Handler handler) {
+
         creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
         connectionThread.run();
 
-        if (connectionThread.isConnected)
+        //if connectionThread could not create and open connection to server
+        if(!connectionThread.isConnected)
         {
-            final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
-            boolean is_conn = handleSocketThread.testConnection();
+            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+            return null;
+        }
 
-            //was response successfully read?
-            if(is_conn)
-            {
-                Log.i("Bluetooth_con", "Sending image to device");
-                handleSocketThread.sendImage(image);
-                handleSocketThread.getInputstream(DeviceActivity.MessageTypes.ImageReceived);
-            }
-            else
-            {
-                Log.e("Bluetooth_conn", "Could not read server response");
+        final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
+        boolean is_conn = handleSocketThread.testConnection();
 
-                //send results to handler
-                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 2, 0, false);
-                readMsg.sendToTarget();
-            }
+        //if sending and reading from server fails
+        if (!is_conn)
+        {
+            Log.e("Bluetooth_conn", "Connection test failed");
+            connectionThread.cancel();
+            handleSocketThread.closeConnection();
+            return null;
+        }
+
+        Log.i("Bluetooth_con", "Fetching status");
+        String statusData = handleSocketThread.getInput();
+
+        //if status message could not be read from server
+        if(statusData == null)
+        {
+            Log.e("Bluetooth_conn", "Could not get status data");
+            connectionThread.cancel();
+            handleSocketThread.closeConnection();
+            return null;
         }
         else
         {
-            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+            handleSocketThread.sendMessage("Download", "0", "0");
+            String imageData = handleSocketThread.getInput();
 
-            //send results to handler
-            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 1,0, false);
-            readMsg.sendToTarget();
+            if (imageData == null)
+            {
+                Log.e("ImageDownload", "Failed to fetch picture information from server");
+                return null;
+            }
+            else
+            {
+                String status, extension;
+                int imgLenght;
+
+                status = imageData.split(",")[0];
+                imgLenght = Integer.parseInt(imageData.split(",")[1]);
+                extension = imageData.split(",")[2];
+
+                String bytes = "";
+
+                if (imgLenght >= 0) {
+
+                    Bitmap image = handleSocketThread.readImage(imgLenght);
+
+                    if (image != null) {
+                        return image;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+                return null;
+            }
         }
     }
 
     //---Internal Classes---
-    public class creatingConnectionThread extends Thread
-    {
+    public class creatingConnectionThread extends Thread {
         private BluetoothDevice mmDevice;
         private BluetoothSocket mmSocket;
         public boolean isConnected;
         private static final int maxSocketCycle = 5;
         private static final int maxConnCycle = 5;
-        private static final int maxTimeMillis = (5)*(1000);
+        private static final int maxTimeMillis = (5) * (1000);
 
-        public creatingConnectionThread(@NonNull BluetoothDevice bluetoothDevice)
-        {
+        public creatingConnectionThread(@NonNull BluetoothDevice bluetoothDevice) {
             mmDevice = bluetoothDevice;
 
             //creating bluetooth socket
-            if(createSocket())
-            {
+            if (createSocket()) {
                 Log.i("SOCKET_CREATION", "Creating Socket Succeeded");
-            }
-            else
-            {
+            } else {
                 Log.e("SOCKET_CREATION", "Creating Socket failed");
             }
 
         }
 
-        private boolean createSocket()
-        {
+        private boolean createSocket() {
             BluetoothSocket tmp;
-            for (int i = 0; i < maxSocketCycle; i++)
-            {
-                try
-                {
+            for (int i = 0; i < maxSocketCycle; i++) {
+                try {
                     tmp = mmDevice.createRfcommSocketToServiceRecord(myUUID);
                     mmSocket = tmp;
                     Log.i("CREATING_B_SOCKET", "Successfully created a bluetooth rfcomm socket");
                     return true;
-                }
-                catch (IOException error)
-                {
+                } catch (IOException error) {
                     Log.e("CREATING_B_SOCKET", "Cannot create bluetooth rfcomm socket. Sleep and try again.", error);
-                    try
-                    {
+                    try {
                         Thread.sleep(maxTimeMillis);
                         //for loop starts a new
-                    }
-                    catch (InterruptedException err)
-                    {
+                    } catch (InterruptedException err) {
                         Log.e("CREATING_B_SOCKET", "Cannot make thread to sleep", err);
                     }
                 }
@@ -482,32 +556,23 @@ public class BluetoothController {
             return false;
         }
 
-        public BluetoothSocket getSocket()
-        {
+        public BluetoothSocket getSocket() {
             return mmSocket;
         }
 
-        private void connectToDevice(@NonNull BluetoothSocket BlueSocket)
-        {
-            for(int i = 0; i < maxConnCycle; i++)
-            {
-                try
-                {
+        private void connectToDevice(@NonNull BluetoothSocket BlueSocket) {
+            for (int i = 0; i < maxConnCycle; i++) {
+                try {
                     BlueSocket.connect();
                     isConnected = true;
                     Log.i("Socket_Connection", "Connection has been created");
                     return;
-                }
-                catch (Exception error)
-                {
+                } catch (Exception error) {
                     Log.e("Socket_Connection", "Error in connecting to server", error);
-                    try
-                    {
+                    try {
                         Thread.sleep(maxTimeMillis);
                         //for loop starts a new
-                    }
-                    catch (InterruptedException err)
-                    {
+                    } catch (InterruptedException err) {
                         Log.e("Socket_Connection", "Cannot make thread to sleep", err);
                     }
                 }
@@ -517,44 +582,34 @@ public class BluetoothController {
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             //just in case, stop discovery.
             mmBluetoothAdapter.cancelDiscovery();
 
-            if(mmSocket == null)
-            {
+            if (mmSocket == null) {
                 Log.e(CREATING_B_SOCKET, "Cannot create connection. Socket is null", new NullPointerException("Socket is empty!"));
                 isConnected = false;
                 return;
-            }
-            else
-            {
+            } else {
                 connectToDevice(mmSocket);
-                if(!isConnected)
-                {
+                if (!isConnected) {
                     Log.e("Socket_Connection", "Still no connection", new Exception("No Connection"));
                 }
             }
         }
 
-        public void cancel()
-        {
-            if(mmSocket.isConnected())
-            {
+        public void cancel() {
+            if (mmSocket.isConnected()) {
                 try {
                     mmSocket.close();
-                }
-                catch (IOException error)
-                {
+                } catch (IOException error) {
                     Log.e("Socket_Connection", "Socket could not be closed", error);
                 }
             }
         }
     }
 
-    public class handleSocket extends Thread
-    {
+    public class handleSocket extends Thread {
 
         private BluetoothSocket mmSocket;
         private InputStream mmInputStream;
@@ -563,19 +618,16 @@ public class BluetoothController {
         private byte[] buffer = new byte[2048];
         private static final String Bluetooth_handler = "Bluetooth_handler";
 
-        public handleSocket(@NonNull BluetoothSocket socket, @NonNull Handler messageHandler)
-        {
+        public handleSocket(@NonNull BluetoothSocket socket, @NonNull Handler messageHandler) {
 
             mmSocket = socket;
             mmHandler = messageHandler;
             try {
 
                 //if not connected
-                if(!socket.isConnected())
-                {
+                if (!socket.isConnected()) {
                     Log.w(Bluetooth_handler, "There is no connection to socket. Trying to create connection");
-                    if(!connect())
-                    {
+                    if (!connect()) {
                         Log.e(Bluetooth_handler, "Connecting to device failed");
                         return;
                     }
@@ -584,100 +636,57 @@ public class BluetoothController {
                 mmInputStream = socket.getInputStream();
                 mmOutputStream = socket.getOutputStream();
 
-            }
-            catch (IOException ioError)
-            {
+            } catch (IOException ioError) {
                 Log.e(Bluetooth_handler, "Fetching streams from socket has failed", ioError);
             }
         }
 
 
         @Override
-        public void run()
-        {
+        public void run() {
             mmBluetoothAdapter.cancelDiscovery();
         }
 
-        public boolean connect(){
-            try
-            {
+        public boolean connect() {
+            try {
                 mmSocket.connect();
 
-                if(mmSocket.isConnected())
-                {
+                if (mmSocket.isConnected()) {
                     Log.i("Socket_Connection", "Bluetooth socket has established connection with server");
                     return true;
-                }
-                else
-                {
+                } else {
                     Log.e("Socket_Connection", "Bluetooth socket could not connect to server", new Exception("Connection not established"));
                     return false;
                 }
 
-            }
-            catch (Exception error)
-            {
+            } catch (Exception error) {
                 Log.e("Socket_Connection", "Error in connecting to server", error);
                 return false;
             }
         }
 
-        public boolean testConnection(){
+        public boolean testConnection() {
 
-                if(getInput() == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
+            sendMessage("Status", "0", "0");
+
+            if (getInput() == null) {
+                return false;
+            } else {
+                return true;
+            }
         }
 
-        public void closeConnection()
-        {
-            try
-            {
-                if(mmSocket.isConnected())
-                {
+        public void closeConnection() {
+            try {
+                if (mmSocket.isConnected()) {
                     mmSocket.close();
                     Log.i(Bluetooth_handler, "Connection to device closed");
                 }
-            }
-            catch (IOException ioerror)
-            {
+            } catch (IOException ioerror) {
                 Log.e(Bluetooth_handler, "Connection could not be closed", ioerror);
             }
         }
 
-        /**
-         * listen for communication from the device
-         */
-        public void getInputstream(DeviceActivity.MessageTypes inqueryType) {
-            try {
-
-                if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
-                {
-                    Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
-                    return;
-                }
-
-                buffer = new byte[2048];
-
-                int response = mmInputStream.read(buffer);
-
-                String responseStr = new String(buffer, 0, response);
-
-                Log.i(Bluetooth_handler, "Received message: " + responseStr);
-                Message readMsg = mmHandler.obtainMessage(DeviceActivity.MessageTypes.valueOf(inqueryType.name()).ordinal(), response, -1, buffer);
-                readMsg.sendToTarget();
-
-            }
-            catch (IOException e)
-            {
-                Log.e(Bluetooth_handler, "Couldn't receive msg", e);
-            }
-        }
 
         public String getInput() {
             try {
@@ -694,18 +703,36 @@ public class BluetoothController {
 
                 Log.i(Bluetooth_handler, "Received message: " + responseStr);
                 return responseStr;
-            }
-            catch(IOException e)
-            {
+            } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't receive msg", e);
                 return null;
             }
         }
 
-        public void sendMessage(String message)
-        {
-            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
-            {
+
+        public void sendMessage(@NonNull String command, @NonNull String message, @NonNull String arg3) {
+
+
+            if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
+                Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
+                return;
+            }
+
+            try {
+                String query = command + "," + message + "," + arg3;
+                byte[] send = query.getBytes();
+
+                //send the information
+                mmOutputStream.write(send);
+
+            } catch (IOException e) {
+                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+            }
+        }
+
+
+        public void sendMessage(@NonNull String message) {
+            if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
                 return;
             }
@@ -727,57 +754,127 @@ public class BluetoothController {
          * 2. Wait for a moment
          * 3. Start sending image
          * 4. Wait for response that upload has been completed
+         *
          * @param image
          */
-        public void sendImage(@NonNull Bitmap image)
-        {
-            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
-            {
+        public void sendImage(@NonNull Bitmap image) {
+            if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
                 return;
             }
 
-            try
-            {
+            try {
                 //convert bitmap to bytearray
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 image.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 byte[] send = stream.toByteArray();
 
                 Log.i("Sending picture", "Bytes to be sent: " + send.length);
+                boolean continueBool = true;
 
-                //inform server that image is being uploaded ("Picture", bytearray length, imagetype)
-                sendMessage("Picture," + send.length + "," + "PNG");
+                while (continueBool) {
 
-                //should get "Ready for picture"
-                String responseFromServer = getInput();
+                    boolean connection = testConnection();
+                    if (!connection) {
+                        Log.i("Sending Image", "Connection lost!");
+                        break;
+                    }
 
-                try
-                {
-                    sleep(2000);
-                } catch (Exception e){
+                    //inform server that image is being uploaded ("Picture", bytearray length, imagetype)
+                    sendMessage("Picture," + send.length + "," + "PNG");
 
+                    //should get "Ready for picture"
+                    String responseFromServer = getInput();
+
+
+                    if (responseFromServer == "Ready for picture") {
+                        try {
+                            sleep(4000);
+                        } catch (Exception e) {
+
+                        }
+                        //send the information
+                        mmOutputStream.write(send);
+
+                        Log.i("Sending picture", "Stopped sending...");
+
+                        //start listening for response
+                        String serverResponse = getInput();
+
+                        //send input to handler forward
+                        Message readMsg = mmHandler.obtainMessage(DeviceActivity.MessageTypes.ResponseToMessage.ordinal(), 0, -1, serverResponse);
+                        readMsg.sendToTarget();
+
+                        continueBool = false;
+                    } else {
+                        Log.e("Send picture", "Server responded with 'Not ready'");
+                    }
                 }
-                //send the information
-                mmOutputStream.write(send);
-
-                Log.i("Sending picture", "Stopped sending...");
-
-                //start listening for response
-                getInputstream(DeviceActivity.MessageTypes.ResponseToMessage);
-
             } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
             }
         }
 
-        public void cancel()
-        {
+        /**
+         * !NOTE Picture should be received as BASE64 encoded string. To decode:
+         * 1. Get whole picture as string format
+         * 2. Use Base64.decode to get bytearray
+         * 3. Create BitMap picture from BitmapFactory decodeBytearray
+         *
+         * @param imageLenght How many bytes is the program excpecting to be sent
+         * @return Bitmap image from PictureFrame-device
+         */
+        public Bitmap readImage(@NonNull int imageLenght) {
+            try {
+                if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
+                    Log.e(Bluetooth_handler, "Cannot read input. Input, socker or output is empty");
+                    return null;
+                }
+
+                //adjust amount of bytes read every loop. For example 5000 at a time would mean that for file with size 20000 would take 4 loops to read whole file.
+                if (imageLenght < 5000) {
+                    buffer = new byte[imageLenght];
+                } else {
+                    buffer = new byte[5000];
+                }
+
+                String responses = "";
+
+                //keep reading the inputstream until the whole picture has been loaded
+                while (responses.length() < imageLenght) {
+                    int response = mmInputStream.read(buffer);
+                    responses += new String(buffer, 0, response);
+                }
+
+                //the sent image is encoded with base64. Decode the image.
+                byte[] decoded = Base64.decode(responses, Base64.DEFAULT);
+
+                //if bitmapfactory return "null" then the picture was not correctly sent to device (bytes lost?
+                Bitmap convertedImage = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+
+                String msg;
+
+                if (convertedImage == null) {
+                    msg = "Picture could not be created from bytes";
+                } else {
+                    msg = "Image was created";
+                }
+
+                Log.i(Bluetooth_handler, msg);
+
+                return convertedImage;
+            } catch (IOException e) {
+                Log.e(Bluetooth_handler, "Couldn't read image from PictureFrame device", e);
+                return null;
+            }
+        }
+
+        public void cancel() {
             mmOutputStream = null;
             mmInputStream = null;
 
 
-            if(mmSocket.isConnected()){
+            if (mmSocket.isConnected()) {
                 closeConnection();
             }
 

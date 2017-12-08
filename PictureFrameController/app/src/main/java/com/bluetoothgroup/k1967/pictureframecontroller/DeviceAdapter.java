@@ -18,12 +18,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * @class   DeviceAdapter   Display data in a RecyclerView element
+ * @class DeviceAdapter   Display data in a RecyclerView element
  */
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder> {
 
     /**
-     * @member  deviceArrayMap   Map of found devices
+     * @member deviceArrayMap   Map of found devices
      */
     private android.util.ArrayMap<String, BluetoothDevice> deviceArrayMap;
     public DeviceListener mmCallback;
@@ -42,15 +42,12 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
 
     /**
-     *
      * @param devList
      * @param deviceListener
      * @param act
      */
-    public DeviceAdapter(@NonNull BluetoothController controller, @NonNull DeviceListener deviceListener, @NonNull Activity act)
-    {
-        try
-        {
+    public DeviceAdapter(@NonNull BluetoothController controller, @NonNull DeviceListener deviceListener, @NonNull Activity act) {
+        try {
             //get paired and detected devices from bluetooth-controller
             deviceArrayMap = controller.getDetectedDevices();
 
@@ -61,13 +58,10 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
             //setup activities
             activity = act;
-            if (act.getClass() == MainActivity.class)
-            {
+            if (act.getClass() == MainActivity.class) {
                 mParent = (MainActivity) activity;
             }
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("DeviceAdapter", "Creating deviceAdapter has failed", error);
         }
     }
@@ -88,8 +82,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     //---Handle content of recycler view list-element---
     @Override
-    public void onBindViewHolder(DeviceAdapter.ViewHolder holder, int position)
-    {
+    public void onBindViewHolder(DeviceAdapter.ViewHolder holder, int position) {
         //item address
         String DeviceAddress = deviceArrayMap.keyAt(position);
         holder.deviceAddress.setText(DeviceAddress);
@@ -99,22 +92,17 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
         holder.deviceName.setText(device.getName());
 
         //item background color
-        if(selectedDevice == -1)
-        {
+        if (selectedDevice == -1) {
             holder.background.setBackgroundColor(Color.WHITE);
-        }
-        else if(deviceArrayMap.keyAt(selectedDevice).equals(DeviceAddress))
-        {
+        } else if (deviceArrayMap.keyAt(selectedDevice).equals(DeviceAddress)) {
             holder.background.setBackgroundColor(Color.GRAY);
-        }
-        else
-        {
+        } else {
             holder.background.setBackgroundColor(Color.WHITE);
         }
 
         //item bonding state
         int state = device.getBondState();
-        switch (state){
+        switch (state) {
             case BluetoothDevice.BOND_BONDING:
                 holder.deviceStatus.setText("Bonding...");
                 holder.deviceImage.setImageResource(R.drawable.bluetooth_searching_black);
@@ -134,8 +122,7 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
     //---Not implemented---
     @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView)
-    {
+    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
 
     }
 
@@ -152,11 +139,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
         public ViewHolder(final View itemView) {
             super(itemView);
-            deviceImage = (ImageView)itemView.findViewById(R.id.logo);
-            deviceName = (TextView)itemView.findViewById(R.id.Name);
-            deviceAddress = (TextView)itemView.findViewById(R.id.Address);
-            deviceStatus = (TextView)itemView.findViewById(R.id.Status);
-            background = (LinearLayout)itemView.findViewById(R.id.LinearLayout);
+            deviceImage = (ImageView) itemView.findViewById(R.id.logo);
+            deviceName = (TextView) itemView.findViewById(R.id.Name);
+            deviceAddress = (TextView) itemView.findViewById(R.id.Address);
+            deviceStatus = (TextView) itemView.findViewById(R.id.Status);
+            background = (LinearLayout) itemView.findViewById(R.id.LinearLayout);
 
             /**
              * when a short click is done to a item in the recyclerview, selected item is highlighted and set as "selectedDevice"
@@ -169,11 +156,9 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
                     int tmp = deviceArrayMap.indexOfKey(selectedClickDevice.getAddress());
 
-                    if(selectedDevice == tmp) {
+                    if (selectedDevice == tmp) {
                         selectedDevice = -1;
-                    }
-                    else
-                    {
+                    } else {
                         selectedDevice = deviceArrayMap.indexOfKey(selectedClickDevice.getAddress());
                     }
 
@@ -193,14 +178,11 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.ViewHolder
 
                     BluetoothDevice selectedDevice = deviceArrayMap.valueAt(getAdapterPosition());
 
-                    if(selectedDevice.getBondState() != BluetoothDevice.BOND_BONDING)
-                    {
+                    if (selectedDevice.getBondState() != BluetoothDevice.BOND_BONDING) {
                         Log.i("DeviceAdapter", "Got long recycler-view item-click");
                         mmCallback.OnDeviceSelect(selectedDevice);
 
-                    }
-                    else
-                    {
+                    } else {
                         Log.w("Bluetooth", "Device is still bonding");
                     }
 

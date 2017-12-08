@@ -30,34 +30,48 @@ public class PictureManagerActivity extends AppCompatActivity {
     private BluetoothDevice mmDevice;
     private Bitmap mmSelectedImage;
 
-    public Handler handler = new Handler(){
+    public Handler handler = new Handler() {
         @Override
-        public void handleMessage(Message msg)
-        {
+        public void handleMessage(Message msg) {
             DeviceActivity.MessageTypes messageType = DeviceActivity.MessageTypes.values()[msg.what];
             int response = msg.arg1;
 
             Log.i("Handler", "Got message! " + msg);
             Log.i("Handler_msg", "Got response of '" + messageType + "'");
 
-            switch (messageType)
-            {
+            switch (messageType) {
                 case ImageReceived:
+                    ImageView picHolder = (ImageView) findViewById(R.id.currentImageView);
+                    switch (response) {
+                        case 1:
+                            Log.i("Download Handler", "Image received successfully");
+                            Bitmap image = (Bitmap) msg.obj;
+                            picHolder.setImageBitmap(image);
+                            break;
+
+                        case 2:
+                            Log.e("Download Handler", "Image could not be created");
+                            picHolder.setImageBitmap(null);
+                            break;
+
+                        default:
+                            Log.e("Download Handler", "Unknown download picture handler message!");
+                            picHolder.setImageBitmap(null);
+                            break;
+                    }
+
+                    break;
+
+                case ImageSent:
                     //-1 == message from server
-                    switch (msg.arg2)
-                    {
+                    switch (msg.arg2) {
                         //error! something failed
                         case 0:
-                            if(msg.arg1 == 2)
-                            {
+                            if (msg.arg1 == 2) {
                                 Log.e("Handler", "Could not read server init response");
-                            }
-                            else if(msg.arg1 == 1)
-                            {
+                            } else if (msg.arg1 == 1) {
                                 Log.e("Handler", "Connection could not be created");
-                            }
-                            else
-                            {
+                            } else {
                                 Log.e("Handler", "undefined error");
                             }
                             break;
@@ -65,7 +79,7 @@ public class PictureManagerActivity extends AppCompatActivity {
                         //got msg
                         case -1:
                             byte[] buffer = new byte[2048];
-                            buffer = (byte[])msg.obj;
+                            buffer = (byte[]) msg.obj;
                             String responseStr = new String(buffer, 0, response);
                             Log.i("Handler", "Data received from server: " + responseStr);
                             break;
@@ -88,21 +102,19 @@ public class PictureManagerActivity extends AppCompatActivity {
         mmBluetoothController = new BluetoothController(this, mReceiver);
         String address = getIntent().getExtras().getString("DeviceAddress");
 
-        if(address == null)
-        {
+        if (address == null) {
             throw new NullPointerException("Device address is empty. Cant send imaged to undefined device");
-        }
-        else
-        {
+        } else {
             mmDevice = mmBluetoothController.getDetectedDevices().get(address);
         }
+
+        getCurrentlyShownPicture();
 
     }
 
 
     //--onclick function---
-    public void onCameraButtonClick(View view)
-    {
+    public void onCameraButtonClick(View view) {
         try {
             Log.i("ButtonClick", "onCameraButton clicked!");
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -110,80 +122,84 @@ public class PictureManagerActivity extends AppCompatActivity {
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takePictureIntent, GET_CAMERA_IMAGE);
             }
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("ButtonClick", "Getting image from gallery has failed", error);
         }
     }
 
-    public void onGalleryButtonClick(View view)
-    {
+    public void onGalleryButtonClick(View view) {
         try {
             Log.i("ButtonClick", "onGalleryButton clicked!");
             Intent galleryIntent = new Intent(Intent.ACTION_PICK);
             galleryIntent.setType("image/");
             startActivityForResult(galleryIntent, GET_GALLERY_IMAGE);
-        }
-        catch (Exception error)
-        {
+        } catch (Exception error) {
             Log.e("ButtonClick", "Getting image from gallery has failed", error);
         }
     }
 
-    public void onSendToDeviceButtonClick(View view)
-    {
-        if(mmSelectedImage != null)
-        {
+    public void onReturnButtonClick(View view) {
+        Intent deviceActivity = new Intent(this, DeviceActivity.class);
+
+        Bundle bundle = new Bundle();
+        bundle.putString("deviceName", mmDevice.getName());
+        bundle.putString("deviceAddress", mmDevice.getAddress());
+        deviceActivity.putExtras(bundle);
+
+        startActivity(deviceActivity);
+    }
+
+    public void onSendToDeviceButtonClick(View view) {
+        if (mmSelectedImage != null) {
             mmBluetoothController.sendImage(mmDevice, handler, mmSelectedImage);
-        }
-        else
-        {
+        } else {
             Log.e("Send_Image", "Cannot send image. None defined for sending", new NullPointerException("No image selected!"));
         }
     }
+
+    //---Picture function---
+    public void getCurrentlyShownPicture() {
+
+        AsyncGetPicture fetcher = new AsyncGetPicture(mmBluetoothController, mmDevice, handler);
+        fetcher.execute();
+        Log.i("Get Image", "getCurrentlyShownPic completed!");
+    }
+
 
     //---On activity response---
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         ImageView receivedImage = (ImageView) findViewById(R.id.capturedImageView);
 
-        switch (requestCode)
-        {
+        switch (requestCode) {
             case GET_GALLERY_IMAGE:
-                if(resultCode == RESULT_OK)
-                {
-                    try
-                    {
+                if (resultCode == RESULT_OK) {
+                    try {
                         Uri imageURI = data.getData();
                         InputStream imageStream = getContentResolver().openInputStream(imageURI);
                         Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
                         int width = selectedImage.getWidth(), height = selectedImage.getHeight();
 
-                        if(width > 1280 && height > 960){
+                        if (width > 1280 && height > 960) {
                             imageStream = getContentResolver().openInputStream(imageURI);
                             BitmapFactory.Options options = new BitmapFactory.Options();
                             options.inSampleSize = 4;
 
-                            selectedImage = BitmapFactory.decodeStream(imageStream, new Rect(0,0,0,0), options);
+                            selectedImage = BitmapFactory.decodeStream(imageStream, new Rect(0, 0, 0, 0), options);
+                            receivedImage.setImageBitmap(selectedImage);
+                            mmSelectedImage = selectedImage;
+                        } else {
                             receivedImage.setImageBitmap(selectedImage);
                             mmSelectedImage = selectedImage;
                         }
-                        else
-                        {
-                            receivedImage.setImageBitmap(selectedImage);
-                            mmSelectedImage = selectedImage;
-                        }
-                    }
-                    catch (Exception error)
-                    {
+                    } catch (Exception error) {
                         Log.i("Fetching image", "Fetching image from gallery has failed!", error);
                     }
                 }
                 break;
 
             case GET_CAMERA_IMAGE:
-                if(resultCode == RESULT_OK){
+                if (resultCode == RESULT_OK) {
                     Bundle extras = data.getExtras();
                     Bitmap imageBitmap = (Bitmap) extras.get("data");
                     receivedImage.setImageBitmap(imageBitmap);
