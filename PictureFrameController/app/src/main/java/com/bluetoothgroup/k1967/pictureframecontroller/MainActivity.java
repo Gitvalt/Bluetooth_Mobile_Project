@@ -53,7 +53,6 @@ public class MainActivity extends AppCompatActivity implements DeviceAdapter.Dev
             label.setText(R.string.discoverableLabel);
             visibilityButton.setImageResource(R.drawable.device_invisible);
             visibilityButton.setEnabled(true);
-
         }
     };
 

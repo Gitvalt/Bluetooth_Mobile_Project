@@ -39,18 +39,32 @@
                 android:layout_margin="10dp"
                 android:text="@string/imageLabel" />
 
-            <ImageView
-                android:id="@+id/currentImageView"
-                android:layout_width="173dp"
-                android:layout_height="151dp"
-                android:layout_margin="0dp"
-                android:layout_marginBottom="10dp"
-                android:layout_marginLeft="10dp"
-                android:layout_marginRight="10dp"
-                android:layout_marginTop="0dp"
-                android:adjustViewBounds="false"
-                android:contentDescription="picture shown in @string/discoverable_device"
-                app:srcCompat="@android:drawable/ic_menu_report_image" />
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/currentImageView"
+                    android:layout_width="173dp"
+                    android:layout_height="151dp"
+                    android:layout_margin="0dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginTop="0dp"
+                    android:adjustViewBounds="false"
+                    android:contentDescription="picture shown in @string/discoverable_device"
+                    app:srcCompat="@android:drawable/ic_menu_report_image" />
+
+                <ProgressBar
+                    android:id="@+id/current_progressBar"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"
+                    android:visibility="invisible" />
+            </RelativeLayout>
 
         </LinearLayout>
 
@@ -69,22 +83,33 @@
                 android:layout_margin="10dp"
                 android:text="@string/selectedImage" />
 
-            <ImageView
-                android:id="@+id/capturedImageView"
-                android:layout_width="173dp"
-                android:layout_height="151dp"
-                android:layout_margin="0dp"
-                android:layout_marginBottom="24dp"
-                android:layout_marginEnd="8dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginTop="68dp"
-                android:adjustViewBounds="false"
-                app:layout_constraintBottom_toTopOf="@+id/buttonLayout"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.502"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/currentImageLayout"
-                app:srcCompat="@android:drawable/ic_menu_report_image" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/capturedImageView"
+                    android:layout_width="173dp"
+                    android:layout_height="151dp"
+                    android:layout_margin="0dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginTop="0dp"
+                    android:adjustViewBounds="false"
+                    android:contentDescription="picture shown in @string/discoverable_device"
+                    app:srcCompat="@android:drawable/ic_menu_report_image" />
+
+                <ProgressBar
+                    android:id="@+id/captured_progressBar"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"
+                    android:visibility="invisible" />
+            </RelativeLayout>
+
         </LinearLayout>
     </LinearLayout>
 

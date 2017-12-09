@@ -18,6 +18,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.io.InputStream;
 
@@ -41,17 +43,24 @@ public class PictureManagerActivity extends AppCompatActivity {
 
             switch (messageType) {
                 case ImageReceived:
+
+                    ProgressBar progressBar = (ProgressBar)findViewById(R.id.current_progressBar);
+                    progressBar.setVisibility(View.INVISIBLE);
+
                     ImageView picHolder = (ImageView) findViewById(R.id.currentImageView);
                     switch (response) {
                         case 1:
+
                             Log.i("Download Handler", "Image received successfully");
                             Bitmap image = (Bitmap) msg.obj;
                             picHolder.setImageBitmap(image);
+                            Toast.makeText(getApplicationContext(), "Fetching image has succeeded", Toast.LENGTH_LONG).show();
                             break;
 
                         case 2:
                             Log.e("Download Handler", "Image could not be created");
                             picHolder.setImageBitmap(null);
+                            Toast.makeText(getApplicationContext(), "Loading currently shown picture has failed", Toast.LENGTH_LONG).show();
                             break;
 
                         default:
@@ -62,18 +71,31 @@ public class PictureManagerActivity extends AppCompatActivity {
 
                     break;
 
+                //When image is sent from the phone to pictureframe
                 case ImageSent:
                     //-1 == message from server
                     switch (msg.arg2) {
                         //error! something failed
                         case 0:
+
+                            String toastMSG = "";
+
                             if (msg.arg1 == 2) {
                                 Log.e("Handler", "Could not read server init response");
+                                toastMSG = "Could not read response from server";
                             } else if (msg.arg1 == 1) {
                                 Log.e("Handler", "Connection could not be created");
+                                toastMSG = "Connection could not be created";
+                            } else if(msg.arg1 == 3){
+                                Log.e("Handler", "Picture successfully sent!");
+                                toastMSG = "Picture successfully sent";
                             } else {
                                 Log.e("Handler", "undefined error");
+                                toastMSG = "Unknown error";
                             }
+
+                            Toast.makeText(getApplicationContext(), toastMSG, Toast.LENGTH_SHORT).show();
+
                             break;
 
                         //got msg
@@ -119,6 +141,9 @@ public class PictureManagerActivity extends AppCompatActivity {
             Log.i("ButtonClick", "onCameraButton clicked!");
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
+            ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
+            progressBar.setVisibility(View.VISIBLE);
+
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takePictureIntent, GET_CAMERA_IMAGE);
             }
@@ -132,6 +157,10 @@ public class PictureManagerActivity extends AppCompatActivity {
             Log.i("ButtonClick", "onGalleryButton clicked!");
             Intent galleryIntent = new Intent(Intent.ACTION_PICK);
             galleryIntent.setType("image/");
+
+            ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
+            progressBar.setVisibility(View.VISIBLE);
+
             startActivityForResult(galleryIntent, GET_GALLERY_IMAGE);
         } catch (Exception error) {
             Log.e("ButtonClick", "Getting image from gallery has failed", error);
@@ -149,6 +178,9 @@ public class PictureManagerActivity extends AppCompatActivity {
         startActivity(deviceActivity);
     }
 
+    // TODO: 9.12.2017 Latausikonit
+    // TODO: 9.12.2017 Kun painetaan serverikuvaa, päivitetään
+    // TODO: 9.12.2017 Kaikenlaiset messagheboxist 
     public void onSendToDeviceButtonClick(View view) {
         if (mmSelectedImage != null) {
             mmBluetoothController.sendImage(mmDevice, handler, mmSelectedImage);
@@ -160,7 +192,11 @@ public class PictureManagerActivity extends AppCompatActivity {
     //---Picture function---
     public void getCurrentlyShownPicture() {
 
+        ProgressBar progressBar = (ProgressBar)findViewById(R.id.current_progressBar);
+        progressBar.setVisibility(View.VISIBLE);
+
         AsyncGetPicture fetcher = new AsyncGetPicture(mmBluetoothController, mmDevice, handler);
+        Toast.makeText(getApplicationContext(), "Fetching currently shown picture from the pictureframe", Toast.LENGTH_LONG).show();
         fetcher.execute();
         Log.i("Get Image", "getCurrentlyShownPic completed!");
     }
@@ -192,17 +228,29 @@ public class PictureManagerActivity extends AppCompatActivity {
                             receivedImage.setImageBitmap(selectedImage);
                             mmSelectedImage = selectedImage;
                         }
+
+                        ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
+                        progressBar.setVisibility(View.INVISIBLE);
+
                     } catch (Exception error) {
                         Log.i("Fetching image", "Fetching image from gallery has failed!", error);
+                        ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
+                        progressBar.setVisibility(View.INVISIBLE);
                     }
                 }
                 break;
 
             case GET_CAMERA_IMAGE:
+
+                ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
+                progressBar.setVisibility(View.INVISIBLE);
+
                 if (resultCode == RESULT_OK) {
                     Bundle extras = data.getExtras();
                     Bitmap imageBitmap = (Bitmap) extras.get("data");
                     receivedImage.setImageBitmap(imageBitmap);
+                    mmSelectedImage = imageBitmap;
+
                 }
                 break;
 

@@ -165,6 +165,7 @@ public class DeviceActivity extends AppCompatActivity {
         TextView connectView = (TextView) findViewById(R.id.connectionStatus);
         connectView.setText(R.string.conn_testing);
         mmBluetoothController.testConnection(mmSelectedDevice, handler);
+
     }
 
     //Send, view, receive pictures in picture_frame
