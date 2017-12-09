@@ -1,7 +1,5 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
-;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -25,6 +23,9 @@ import android.support.v4.content.res.TypedArrayUtils;
 import android.util.ArrayMap;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
+
+import com.squareup.picasso.Picasso;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -38,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
+
+;
 
 /**
  * Created by Valtteri on 14.11.2017.
@@ -432,6 +435,7 @@ public class BluetoothController {
         }
     }
 
+<<<<<<< HEAD
     /**
      * 1. Creates a connection thread
      * 2. checks thread created a connection to server --> Socket exists
@@ -511,6 +515,41 @@ public class BluetoothController {
 
                 return null;
             }
+=======
+
+    public void getImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler, View view)
+    {
+        creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
+        connectionThread.run();
+
+        if (connectionThread.isConnected)
+        {
+            final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
+            boolean is_conn = handleSocketThread.testConnection();
+
+            //was response successfully read?
+            if(is_conn)
+            {
+                Log.i("Bluetooth_con", "Sending image to device");
+                handleSocketThread.getImage(view);
+            }
+            else
+            {
+                Log.e("Bluetooth_conn", "Could not read server response");
+
+                //send results to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 2, 0, false);
+                readMsg.sendToTarget();
+            }
+        }
+        else
+        {
+            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+
+            //send results to handler
+            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 1,0, false);
+            readMsg.sendToTarget();
+>>>>>>> origin/master
         }
     }
 
@@ -535,7 +574,14 @@ public class BluetoothController {
 
         }
 
+<<<<<<< HEAD
         private boolean createSocket() {
+=======
+
+
+        private boolean createSocket()
+        {
+>>>>>>> origin/master
             BluetoothSocket tmp;
             for (int i = 0; i < maxSocketCycle; i++) {
                 try {
@@ -761,8 +807,58 @@ public class BluetoothController {
          *
          * @param image
          */
+<<<<<<< HEAD
         public void sendImage(@NonNull Bitmap image) {
             if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
+=======
+        public void getImage(View view)
+        {
+            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
+            {
+                Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
+                return;
+            }
+
+            try
+            {
+                Context ctx = mmParent.getApplicationContext();
+
+
+                sendMessage("GetImage," + "200" + "," + "PNG");
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                Log.v("asd", "filedir"+ctx.getFilesDir());
+
+                byte[] buffer = new byte[1024];
+
+                buffer = new byte[2048];
+                String responseStr = "";
+                while ((!responseStr.equals("END"))) {
+                    try {
+                        int response = mmInputStream.read(buffer);
+                        responseStr = new String(buffer, 0, response);
+                        //Log.v("asd", responseStr);
+                        outputStream.write(responseStr.getBytes());
+                    } catch (Exception e) {}
+                }
+
+                byte b[] = outputStream.toByteArray();
+                Log.v("asd", b.toString()+" len:"+b.length);
+                Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
+
+
+
+
+            } catch (Exception e) {
+                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+            }
+        }
+
+        public void sendImage(@NonNull Bitmap image)
+        {
+            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
+            {
+>>>>>>> origin/master
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
                 return;
             }
@@ -816,6 +912,7 @@ public class BluetoothController {
             }
         }
 
+<<<<<<< HEAD
         /**
          * !NOTE Picture should be received as BASE64 encoded string. To decode:
          * 1. Get whole picture as string format
@@ -871,6 +968,11 @@ public class BluetoothController {
         }
 
         public void cancel() {
+=======
+
+        public void cancel()
+        {
+>>>>>>> origin/master
             mmOutputStream = null;
             mmInputStream = null;
 

@@ -22,7 +22,8 @@ while True:
 
     client_sock, client_info = server_sock.accept()
     print("New connection: ", client_info)
-    client_sock.send("Connection successful!")
+    client_sock.send("Connection successful!,200")
+    start_time = time.time()
     
     try:
         collection = ""
@@ -34,12 +35,12 @@ while True:
             if command == "default":
                 try:
                     #try to parse input as utf-8 message.
-                    print "default"
+                    print "default!"
                     data = client_sock.recv(2000)
                     data_str = data.decode("utf-8")
                     
                     #print received input
-                    print data
+                    print "Received input: '{}'".format(data_str)
 
                     # parse input command 
                     # Usually prepares frame for reading picture bytearray:
@@ -52,8 +53,8 @@ while True:
                     if command == "Picture":
                             client_sock.send("Ready for picture")
 
-                except Exception:
-                    pass
+                except Exception as e:
+                    print e.message
 
             #if we are expecting a picture
             elif command == "Picture":
@@ -83,14 +84,23 @@ while True:
                     print "Downloading...({} out of {})".format(len(collection), msgLenght)
 
             elif command == "Status":
-                client_sock.send("{},{},{}".format("Status","All OK",time.time()))
+                client_sock.send("{},{},{}".format("Status","200",time.time()))
+            
+            elif command == "Shutdown":
+                client_sock.send("Shutdown")
+                print "Disconnecting"
+                break
                    
                 
     except IOError as err:
-        print "Error has happened! {}".format(err)
+        pass
 
+    try:
+        print("disconnected")
+        # file.close()
+        client_sock.close()
+        server_sock.close()
+        stop_advertising(server_sock)
 
-    print("disconnected")
-    # file.close()
-    client_sock.close()
-    server_sock.close()
+    except Exception as e:
+        print e.message
