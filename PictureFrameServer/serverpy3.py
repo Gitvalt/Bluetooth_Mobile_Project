@@ -4,6 +4,8 @@ import io
 from PIL import Image
 from bluetooth import *
 from tqdm import tqdm
+import base64
+
 
 def serverstart(self):
     while True:
@@ -96,14 +98,18 @@ def serverstart(self):
 
                 elif command == "GetImage":
                     print("sending ")
-                    img = Image.open(self.images[self.selected_img], mode='r')
-                    imgByteArr = io.BytesIO()
-                    img.save(imgByteArr, format='PNG')
-                    imgByteArr = imgByteArr.getvalue()
-                    for bitti in tqdm(imgByteArr):
-                        client_sock.send(bytes(bitti))
-                    client_sock.send("END")
+                    with open(self.images[self.selected_img], "rb") as image_f:
+                        imgb64 = base64.b64encode(image_f.read())
+                    #print("{}".format(imgb64))
+                    debugfile = open("Output.txt", "w+")
+                    debugfile.write("{}".format(imgb64))
+                    debugfile.close()
+                    client_sock.send("{}".format(len(imgb64)))
+                    print(len(imgb64))
+                    handshake = client_sock.recv(512)
+                    client_sock.send("{}".format(imgb64)[2:-1])
                     print("done")
+                    command = "default"
                                         
                 elif command == "Shutdown":
                     client_sock.send("Shutdown")

@@ -15,6 +15,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -22,8 +23,8 @@ import android.support.v4.content.PermissionChecker;
 import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
-
-import com.squareup.picasso.Picasso;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -784,29 +785,39 @@ public class BluetoothController {
             try
             {
                 Context ctx = mmParent.getApplicationContext();
-
+                Toast.makeText(ctx, "Connecting...",
+                        Toast.LENGTH_SHORT).show();
 
                 sendMessage("GetImage," + "200" + "," + "PNG");
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
                 Log.v("asd", "filedir"+ctx.getFilesDir());
-
-                byte[] buffer = new byte[1024];
-
-                buffer = new byte[2048];
+                String input = getInput();
+                int img_bytes = Integer.parseInt(input);
+                sendMessage("OK");
+                int recieved_bytes = 0;
+                String image_string = "";
                 String responseStr = "";
-                while ((!responseStr.equals("END"))) {
+                while (image_string.length() < img_bytes) {
                     try {
-                        int response = mmInputStream.read(buffer);
-                        responseStr = new String(buffer, 0, response);
-                        //Log.v("asd", responseStr);
-                        outputStream.write(responseStr.getBytes());
+                        image_string = image_string + getInput();
+                        //Log.v("getimg", image_string);
                     } catch (Exception e) {}
                 }
 
-                byte b[] = outputStream.toByteArray();
-                Log.v("asd", b.toString()+" len:"+b.length);
-                Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
+                byte data[]= android.util.Base64.decode(image_string, android.util.Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                Log.v("getimg", "image decoded?");
+                MediaStore.Images.Media.insertImage(ctx.getContentResolver(), bmp ,"new image" , "image from server");
+                ImageView currentimg;
+                currentimg = (ImageView) view.findViewById(R.id.currentImageView);
+                currentimg.setImageBitmap(bmp);
+                Toast.makeText(ctx, "Image saved to gallery",
+                        Toast.LENGTH_LONG).show();
+
+                //byte b[] = outputStream.toByteArray();
+                //Log.v("asd", b.toString()+" len:"+b.length);
+               // Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
 
 
 
