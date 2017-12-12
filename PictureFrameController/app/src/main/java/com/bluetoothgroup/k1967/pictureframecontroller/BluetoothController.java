@@ -24,6 +24,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
@@ -810,7 +811,9 @@ public class BluetoothController {
                 Log.v("getimg", "image decoded?");
                 MediaStore.Images.Media.insertImage(ctx.getContentResolver(), bmp ,"new image" , "image from server");
                 ImageView currentimg;
-                currentimg = (ImageView) view.findViewById(R.id.currentImageView);
+
+
+                currentimg = mmParent.findViewById(R.id.currentImageView);
                 currentimg.setImageBitmap(bmp);
                 Toast.makeText(ctx, "Image saved to gallery",
                         Toast.LENGTH_LONG).show();
@@ -823,7 +826,7 @@ public class BluetoothController {
 
 
             } catch (Exception e) {
-                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+                Log.e(Bluetooth_handler, "GetImage Error", e);
             }
         }
 
