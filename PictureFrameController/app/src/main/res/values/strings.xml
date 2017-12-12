@@ -43,5 +43,6 @@
     <string name="sendpicture">Send picture to Device</string>
     <string name="selectedImage">Selected Image</string>
     <string name="ReturnView">Return to view</string>
+    <string name="saveImage">Save image to storage</string>
 
 </resources>

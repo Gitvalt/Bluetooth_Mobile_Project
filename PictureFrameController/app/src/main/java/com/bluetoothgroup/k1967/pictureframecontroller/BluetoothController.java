@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.Image;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
@@ -23,6 +24,7 @@ import android.support.v4.content.res.TypedArrayUtils;
 import android.util.ArrayMap;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Xml;
 import android.view.View;
 
 import com.squareup.picasso.Picasso;
@@ -40,7 +42,6 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
-;
 
 /**
  * Created by Valtteri on 14.11.2017.
@@ -140,23 +141,32 @@ public class BluetoothController {
         int fineLocation = PermissionChecker.checkSelfPermission(mContext.getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
         int coarseLocation = PermissionChecker.checkSelfPermission(mContext.getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION);
 
+        int readExternal = PermissionChecker.checkSelfPermission(mContext.getApplicationContext(), Manifest.permission.READ_EXTERNAL_STORAGE);
+        int writeExternal = PermissionChecker.checkSelfPermission(mContext.getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
         int granted = PermissionChecker.PERMISSION_GRANTED;
+
 
         /**
          * If some of the necessary permissions are not granted, App will ask the user for them...
          */
-        if (selfPermission != granted || adminPermission != granted || fineLocation != granted || coarseLocation != granted) {
+        if (selfPermission != granted ||
+                adminPermission != granted ||
+                fineLocation != granted ||
+                coarseLocation != granted ||
+                readExternal != granted ||
+                writeExternal != granted) {
             return false;
         } else {
             return true;
         }
     }
 
-    public void askPermissions() {
+    public void askPermissions(Activity parent) {
         /**
          * Show alert dialog informing what permissions are required for this app to work
          */
-        AlertDialog.Builder alert = new AlertDialog.Builder(mmParent.getWindow().getContext());
+        AlertDialog.Builder alert = new AlertDialog.Builder(parent.getWindow().getContext());
         alert.setTitle("Permissions have not been granted");
         alert.setMessage("Permissions for coarse/fine location and Bluetooth are required");
         alert.setCancelable(false);
@@ -169,7 +179,9 @@ public class BluetoothController {
                         Manifest.permission.BLUETOOTH,
                         Manifest.permission.BLUETOOTH_ADMIN,
                         Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
                 }, BLUETOOTH_PERMISSION_TAG);
             }
         });
@@ -212,7 +224,7 @@ public class BluetoothController {
             addPairedDevicesToList();
 
             if (!bluetoothPermissions()) {
-                askPermissions();
+                askPermissions(mmParent);
             } else {
 
                 registerBluetoothService();
@@ -394,28 +406,14 @@ public class BluetoothController {
 
             if (connectionThread.isConnected) {
                 final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
-                boolean is_conn = handleSocketThread.testConnection();
 
-                //test connection
-                if (is_conn) {
+                Log.i("Bluetooth_con", "Sending image to device");
+                handleSocketThread.sendImage(image);
+                handleSocketThread.closeConnection();
 
-                    Log.i("Bluetooth_con", "Sending image to device");
-                    handleSocketThread.sendImage(image);
-                    handleSocketThread.closeConnection();
-
-                    //send results (success) to handler
-                    Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageSent.ordinal(), 3, 0, true);
-                    readMsg.sendToTarget();
-
-                } else {
-                    Log.e("Bluetooth_conn", "Could not read server response");
-                    connectionThread.cancel();
-                    handleSocketThread.closeConnection();
-
-                    //send results (error) to handler
-                    Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageSent.ordinal(), 2, 0, false);
-                    readMsg.sendToTarget();
-                }
+                //send results (success) to handler
+                Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageSent.ordinal(), 3, 0, true);
+                readMsg.sendToTarget();
             }
 
             //connecting to server has failed
@@ -435,7 +433,7 @@ public class BluetoothController {
         }
     }
 
-<<<<<<< HEAD
+    @Deprecated
     /**
      * 1. Creates a connection thread
      * 2. checks thread created a connection to server --> Socket exists
@@ -484,10 +482,20 @@ public class BluetoothController {
             handleSocketThread.closeConnection();
             return null;
         } else {
-            handleSocketThread.sendMessage("Download", "0", "0");
-            String imageData = handleSocketThread.getInput();
 
+            Bitmap image = handleSocketThread.getImage();
 
+            if(image != null) {
+                return image;
+            }
+            else {
+                return null;
+            }
+
+            //handleSocketThread.sendMessage("Download", "0", "0");
+            //String imageData = handleSocketThread.getInput();
+
+            /*
             if (imageData == null) {
                 Log.e("ImageDownload", "Failed to fetch picture information from server");
                 return null;
@@ -515,43 +523,72 @@ public class BluetoothController {
 
                 return null;
             }
-=======
+            */
+        }
+    }
 
-    public void getImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler, View view)
+    @Deprecated
+    public void getImage (@NonNull BluetoothDevice mdevice, @NonNull Handler handler, View view)
     {
         creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
         connectionThread.run();
 
-        if (connectionThread.isConnected)
-        {
+        if (connectionThread.isConnected) {
             final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
             boolean is_conn = handleSocketThread.testConnection();
 
             //was response successfully read?
-            if(is_conn)
-            {
+            if (is_conn) {
                 Log.i("Bluetooth_con", "Sending image to device");
                 handleSocketThread.getImage(view);
-            }
-            else
-            {
+
+            } else {
                 Log.e("Bluetooth_conn", "Could not read server response");
 
                 //send results to handler
                 Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 2, 0, false);
                 readMsg.sendToTarget();
             }
-        }
-        else
-        {
+        } else {
             Log.e("Bluetooth_conn", "Connection not created, cannot continue");
 
             //send results to handler
-            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 1,0, false);
+            Message readMsg = handler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 1, 0, false);
             readMsg.sendToTarget();
->>>>>>> origin/master
         }
     }
+
+    /**
+     * 1. Creates a connection thread
+     * 2. checks thread created a connection to server --> Socket exists
+     * 3. Creates handling thread and tests connectino
+     * if testing ok:
+     * 4. gets server status
+     * 5. Informs server that we want to download current picture
+     * 6. Reads response and reads the server status, length of image and extension of the image.
+     * 7. starts handlethreads image reading
+     * 8. returns returned image
+     * if testing failed
+     *
+     * @param mdevice
+     * @param handler
+     * @return
+     */
+    public Bitmap getImage(@NonNull BluetoothDevice mdevice, @NonNull Handler handler) {
+
+        creatingConnectionThread connectionThread = new creatingConnectionThread(mdevice);
+        connectionThread.run();
+
+        if (connectionThread.isConnected) {
+            final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
+            Bitmap map = handleSocketThread.getImage();
+            return map;
+        } else {
+            Log.e("Bluetooth_conn", "Connection not created, cannot continue");
+            return null;
+        }
+    }
+
 
     //---Internal Classes---
     public class creatingConnectionThread extends Thread {
@@ -574,14 +611,7 @@ public class BluetoothController {
 
         }
 
-<<<<<<< HEAD
         private boolean createSocket() {
-=======
-
-
-        private boolean createSocket()
-        {
->>>>>>> origin/master
             BluetoothSocket tmp;
             for (int i = 0; i < maxSocketCycle; i++) {
                 try {
@@ -798,6 +828,7 @@ public class BluetoothController {
 
 
         // TODO: 9.12.2017 MESSAGE HEADERIT PERSEESTÄ
+
         /**
          * Client - Server picture upload process:
          * 1. Inform server that image is coming
@@ -807,27 +838,21 @@ public class BluetoothController {
          *
          * @param image
          */
-<<<<<<< HEAD
-        public void sendImage(@NonNull Bitmap image) {
+
+        public void getImage(View view) {
             if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
-=======
-        public void getImage(View view)
-        {
-            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
-            {
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
                 return;
             }
 
-            try
-            {
+            try {
                 Context ctx = mmParent.getApplicationContext();
 
 
                 sendMessage("GetImage," + "200" + "," + "PNG");
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-                Log.v("asd", "filedir"+ctx.getFilesDir());
+                Log.v("asd", "filedir" + ctx.getFilesDir());
 
                 byte[] buffer = new byte[1024];
 
@@ -839,14 +864,13 @@ public class BluetoothController {
                         responseStr = new String(buffer, 0, response);
                         //Log.v("asd", responseStr);
                         outputStream.write(responseStr.getBytes());
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                    }
                 }
 
                 byte b[] = outputStream.toByteArray();
-                Log.v("asd", b.toString()+" len:"+b.length);
+                Log.v("asd", b.toString() + " len:" + b.length);
                 Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
-
-
 
 
             } catch (Exception e) {
@@ -854,65 +878,68 @@ public class BluetoothController {
             }
         }
 
-        public void sendImage(@NonNull Bitmap image)
-        {
-            if(mmSocket == null || mmInputStream == null || mmOutputStream == null)
-            {
->>>>>>> origin/master
+        /**
+         * Valtteri's getimage
+         * @return
+         */
+        public Bitmap getImage() {
+            if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
-                return;
+                return null;
             }
 
             try {
-                //convert bitmap to bytearray
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                image.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                //byte[] send = stream.toByteArray();
-                byte[] send = Base64.encode(stream.toByteArray(), Base64.DEFAULT);
+                sendMessage("GetImage," + "200" + "," + "PNG");
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
+                //initial connection --> first is welcome msg
+                String test = getInput();
 
+                Log.v("asd", "reading file");
 
-                Log.i("Sending picture", "Bytes to be sent: " + send.length);
-                boolean continueBool = true;
-                String responseFromServer2 = getInput();
+                byte[] buffer;
+                buffer = new byte[2048];
+                Bitmap bit;
+                String concat = "";
+                String responseStr = "";
 
-                //inform server that image is being uploaded ("Picture", bytearray length, imagetype)
-                sendMessage("Picture," + send.length + "," + "PNG");
+                while ((!responseStr.equals("END"))) {
+                    try {
+                        int response = mmInputStream.read(buffer);
+                        responseStr = new String(buffer, 0, response);
 
-                //should get "Ready for picture"
-                String responseFromServer = getInput();
+                        concat += responseStr;
 
-                while (continueBool)
-                {
+                        Log.v("asd", responseStr);
+                        outputStream.write(responseStr.getBytes());
 
-                    if (responseFromServer.equals("200")) {
-
-                        mmOutputStream.write(send);
-                        //note that program will continue even while outputstream is still writing
-
-                        Log.i("Sending picture", "Stopped sending...");
-
-                        //start listening for response
-                        String serverResponse = getInput();
-
-                        //send input to handler forward
-                        Message readMsg = mmHandler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 0, -1, serverResponse);
-                        readMsg.sendToTarget();
-
-                        continueBool = false;
-                    } else {
-                        Log.e("Send picture", "Server responded with 'Not ready'");
-                        responseFromServer = getInput();
-                        continueBool = true;
+                    } catch (Exception e) {
+                        Log.e("Stream", "Error in reading stream", e);
                     }
-
                 }
-            } catch (IOException e) {
+
+                sendMessage("END");
+
+                Log.i("ReadingFile", "Reading file has ended");
+                outputStream.flush();
+
+                //the sent image is encoded with base64. Decode the image.
+                byte[] decoded = Base64.decode(concat, Base64.DEFAULT);
+
+                //if bitmapfactory return "null" then the picture was not correctly sent to device (bytes lost?
+                Bitmap convertedImage = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+
+                return convertedImage;
+            } catch (Exception e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
+                return null;
             }
+
         }
 
-<<<<<<< HEAD
+
+
+        @Deprecated
         /**
          * !NOTE Picture should be received as BASE64 encoded string. To decode:
          * 1. Get whole picture as string format
@@ -967,12 +994,62 @@ public class BluetoothController {
             }
         }
 
-        public void cancel() {
-=======
 
-        public void cancel()
-        {
->>>>>>> origin/master
+        public void sendImage(@NonNull Bitmap image) {
+            if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
+                Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
+                return;
+            }
+
+            try {
+
+                //convert bitmap to bytearray
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                image.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                //byte[] send = stream.toByteArray();
+                byte[] send = Base64.encode(stream.toByteArray(), Base64.DEFAULT);
+
+
+                Log.i("Sending picture", "Bytes to be sent: " + send.length);
+                boolean continueBool = true;
+                String responseFromServer2 = getInput();
+
+                //inform server that image is being uploaded ("Picture", bytearray length, imagetype)
+                sendMessage("Picture," + send.length + "," + "PNG");
+
+                //should get "Ready for picture"
+                String responseFromServer = getInput();
+
+                while (continueBool) {
+
+                    if (responseFromServer.equals("200")) {
+
+                        mmOutputStream.write(send);
+                        //note that program will continue even while outputstream is still writing
+
+                        Log.i("Sending picture", "Stopped sending...");
+
+                        //start listening for response
+                        String serverResponse = getInput();
+
+                        //send input to handler forward
+                        Message readMsg = mmHandler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 0, -1, serverResponse);
+                        readMsg.sendToTarget();
+
+                        continueBool = false;
+                    } else {
+                        Log.e("Send picture", "Server responded with 'Not ready'");
+                        responseFromServer = getInput();
+                        continueBool = true;
+                    }
+
+                }
+            } catch (IOException e) {
+                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+            }
+        }
+
+        public void cancel() {
             mmOutputStream = null;
             mmInputStream = null;
 
@@ -983,5 +1060,5 @@ public class BluetoothController {
 
         }
     }
-
 }
+

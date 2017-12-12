@@ -48,7 +48,15 @@ public class AsyncGetPicture extends AsyncTask<Void, Void, Bitmap> {
 
     @Override
     protected Bitmap doInBackground(Void... voids) {
-        Bitmap shownPic = mBluetoothController.getCurrentlyShownPic(mDevice, mHandler);
-        return shownPic;
+        //Bitmap shownPic = mBluetoothController.getCurrentlyShownPic(mDevice, mHandler);
+        try {
+            Bitmap image = mBluetoothController.getImage(mDevice, mHandler);
+            return image;
+        }
+        catch (Exception error)
+        {
+            Log.e("ButtonClick", ""+error);
+            return null;
+        }
     }
 }
