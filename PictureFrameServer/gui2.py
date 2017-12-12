@@ -69,6 +69,7 @@ class Application(tk.Frame):
         self.images = glob.glob("media/*.jpg") + glob.glob("media/*.png")
         self.images.sort(key=os.path.getmtime, reverse=True)
         if change:
+            self.selected_img = 0
             self.change_img(0)
 
         print(self.images)
