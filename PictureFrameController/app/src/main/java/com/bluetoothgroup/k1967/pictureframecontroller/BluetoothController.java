@@ -537,7 +537,8 @@ public class BluetoothController {
 
         if (connectionThread.isConnected) {
             final handleSocket handleSocketThread = new handleSocket(connectionThread.mmSocket, handler);
-            boolean is_conn = handleSocketThread.testConnection();
+            //boolean is_conn = handleSocketThread.testConnection();
+            boolean is_conn = true;
 
             //was response successfully read?
             if (is_conn) {
@@ -829,7 +830,6 @@ public class BluetoothController {
         }
 
 
-        // TODO: 9.12.2017 MESSAGE HEADERIT PERSEESTÄ
 
         /**
          * Client - Server picture upload process:
@@ -840,7 +840,6 @@ public class BluetoothController {
          *
          * @param image
          */
-
         public void getImage(View view) {
             if (mmSocket == null || mmInputStream == null || mmOutputStream == null) {
                 Log.e(Bluetooth_handler, "Cannot read input. Input, socket or output is empty");
@@ -852,10 +851,12 @@ public class BluetoothController {
                 Toast.makeText(ctx, "Connecting...",
                         Toast.LENGTH_SHORT).show();
 
-                sendMessage("GetImage," + "200" + "," + "PNG");
+
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
                 Log.v("asd", "filedir"+ctx.getFilesDir());
+                String welcome = getInput();
+                sendMessage("GetImage," + "200" + "," + "PNG");
                 String input = getInput();
                 int img_bytes = Integer.parseInt(input);
                 sendMessage("OK");
@@ -929,7 +930,7 @@ public class BluetoothController {
 
                         concat += responseStr;
 
-                        Log.v("asd", responseStr);
+                        //Log.v("asd", responseStr);
                         outputStream.write(responseStr.getBytes());
 
                     } catch (Exception e) {

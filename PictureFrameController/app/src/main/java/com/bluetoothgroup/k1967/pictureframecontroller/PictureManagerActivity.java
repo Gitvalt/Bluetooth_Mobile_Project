@@ -82,7 +82,6 @@ public class PictureManagerActivity extends AppCompatActivity {
             Log.i("Handler_msg", "Got response of '" + messageType + "'");
 
             switch (messageType) {
-                // TODO: 12.12.2017 Tarkista, että tiedoston tallennus oikeasti onnistui 
                 case ImageReceived:
 
                     ProgressBar progressBar = (ProgressBar)findViewById(R.id.current_progressBar);
@@ -121,9 +120,29 @@ public class PictureManagerActivity extends AppCompatActivity {
                             }
 
                             try {
-                                Bitmap savedImage = BitmapFactory.decodeStream(new FileInputStream(file));
+                                final Bitmap savedImage = BitmapFactory.decodeStream(new FileInputStream(file));
                                 picHolder.setImageBitmap(savedImage);
                                 mmFetchedFromFrame_Bitmap = savedImage;
+
+                                AlertDialog dialog = new AlertDialog.Builder(PictureManagerActivity.this)
+                                        .setTitle("Add to gallery?")
+                                        .setMessage("Do you want to add the picture into gallery?")
+                                        .setPositiveButton("Add to Gallery", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                MediaStore.Images.Media.insertImage(getContentResolver(), savedImage ,"new image" , "image from server");
+                                            }
+                                        })
+                                        .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                            @Override
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                Log.i("Onclick", "Do not add to gallery");
+                                            }
+                                        }).create();
+
+                                dialog.show();
+
+
                                 mmFetchedFromFrame_Uri = Uri.parse(file.getAbsolutePath());
                             }
                             catch (Exception e){
@@ -298,7 +317,7 @@ public class PictureManagerActivity extends AppCompatActivity {
         getCurrentlyShownPicture();
     }
 
-    @Deprecated
+
     public void GetImageButton(View view)
     {
         try {
