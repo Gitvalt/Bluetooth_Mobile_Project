@@ -16,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.media.Image;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -26,8 +27,9 @@ import android.util.Base64;
 import android.util.Log;
 import android.util.Xml;
 import android.view.View;
-
-import com.squareup.picasso.Picasso;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -847,30 +849,42 @@ public class BluetoothController {
 
             try {
                 Context ctx = mmParent.getApplicationContext();
-
+                Toast.makeText(ctx, "Connecting...",
+                        Toast.LENGTH_SHORT).show();
 
                 sendMessage("GetImage," + "200" + "," + "PNG");
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
-                Log.v("asd", "filedir" + ctx.getFilesDir());
-
-                byte[] buffer = new byte[1024];
-
-                buffer = new byte[2048];
+                Log.v("asd", "filedir"+ctx.getFilesDir());
+                String input = getInput();
+                int img_bytes = Integer.parseInt(input);
+                sendMessage("OK");
+                int recieved_bytes = 0;
+                String image_string = "";
                 String responseStr = "";
-                while ((!responseStr.equals("END"))) {
+                
+                while (image_string.length() < img_bytes) {
                     try {
-                        int response = mmInputStream.read(buffer);
-                        responseStr = new String(buffer, 0, response);
-                        //Log.v("asd", responseStr);
-                        outputStream.write(responseStr.getBytes());
-                    } catch (Exception e) {
-                    }
+                        image_string = image_string + getInput();
+                        //Log.v("getimg", image_string);
+                    } catch (Exception e) {}
                 }
 
-                byte b[] = outputStream.toByteArray();
-                Log.v("asd", b.toString() + " len:" + b.length);
-                Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
+                byte data[]= android.util.Base64.decode(image_string, android.util.Base64.DEFAULT);
+                Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                Log.v("getimg", "image decoded?");
+                MediaStore.Images.Media.insertImage(ctx.getContentResolver(), bmp ,"new image" , "image from server");
+                ImageView currentimg;
+
+
+                currentimg = mmParent.findViewById(R.id.currentImageView);
+                currentimg.setImageBitmap(bmp);
+                Toast.makeText(ctx, "Image saved to gallery",
+                        Toast.LENGTH_LONG).show();
+
+                //byte b[] = outputStream.toByteArray();
+                //Log.v("asd", b.toString()+" len:"+b.length);
+               // Bitmap bmp = BitmapFactory.decodeByteArray(b, 0, b.length);
 
 
             } catch (Exception e) {
@@ -889,11 +903,14 @@ public class BluetoothController {
             }
 
             try {
-                sendMessage("GetImage," + "200" + "," + "PNG");
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
                 //initial connection --> first is welcome msg
                 String test = getInput();
+
+                sendMessage("GetImage," + "200" + "," + "PNG");
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                long imageLength = Long.parseLong(getInput());
 
                 Log.v("asd", "reading file");
 
@@ -903,7 +920,9 @@ public class BluetoothController {
                 String concat = "";
                 String responseStr = "";
 
-                while ((!responseStr.equals("END"))) {
+                sendMessage("Ready for transfer");
+
+                while (concat.length() < imageLength) {
                     try {
                         int response = mmInputStream.read(buffer);
                         responseStr = new String(buffer, 0, response);
@@ -918,8 +937,6 @@ public class BluetoothController {
                     }
                 }
 
-                sendMessage("END");
-
                 Log.i("ReadingFile", "Reading file has ended");
                 outputStream.flush();
 
@@ -931,10 +948,9 @@ public class BluetoothController {
 
                 return convertedImage;
             } catch (Exception e) {
-                Log.e(Bluetooth_handler, "Couldn't send msg", e);
+                Log.e(Bluetooth_handler, "GetImage Error", e);
                 return null;
             }
-
         }
 
 
