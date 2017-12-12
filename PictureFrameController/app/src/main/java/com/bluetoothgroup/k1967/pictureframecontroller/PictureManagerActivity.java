@@ -1,8 +1,10 @@
 package com.bluetoothgroup.k1967.pictureframecontroller;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,6 +16,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -26,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -43,17 +45,32 @@ public class PictureManagerActivity extends AppCompatActivity {
     public static final String photoRootFolder  = "/PictureFrameController";
 
     /**
-     * mmSelectedImage - Image from gallery or camera
-     * mmFetchedImage - Image from PictureFrame-device
+     * PhotoOrigin - When uploading a photo to PictureFrame, we want to remember from where the photo, that is to be sent, was fetched
+     * For Example:
+     * Photos from camera may need to be saved to the phone for later use.
+     * If photo was fetched from phones gallery, then we do not want to save the same mediafile again.
      */
-    private Bitmap mmSelectedImage;
-    private Bitmap mmFetchedImage;
+    private enum PhotoOrigin {
+        Camera,
+        Gallery
+    };
 
-    //Uri we get from camera
-    private Uri cameraPictureURI;
+    /**
+     * mmPictureFromPhone_resizedBitmap - Bitmap containing image from either camera or gallery
+     * mmPictureFromPhone_Origin - From where Bitmap was fetched
+     * mmPictureFromPhone_Uri - The location where selected image has been saved
+     */
+    private Bitmap mmPictureFromPhone_resizedBitmap;
+    private PhotoOrigin mmPictureFromPhone_Origin;
+    private Uri mmPictureFromPhone_Uri;
 
-    //image Uri from galleria or camera
-    private Uri selectedPhoto;
+    /**
+     * mmFetchedFromFrame_Bitmap - Image from PictureFrame-device
+     */
+    private Bitmap mmFetchedFromFrame_Bitmap;
+    private Uri mmFetchedFromFrame_Uri;
+    private boolean mmFetchedFromFrame_saved;
+
 
     public Handler handler = new Handler() {
         @Override
@@ -77,10 +94,11 @@ public class PictureManagerActivity extends AppCompatActivity {
 
                             Log.i("Download Handler", "Image received successfully");
                             Bitmap image = (Bitmap) msg.obj;
-                            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-                            File file = new File(photoFolderTmp, timeStamp);
+                            File file = new File(Environment.getExternalStorageDirectory() + photoFolderTmp, "fetchedTemporary" + ".png");
                             FileOutputStream fos = null;
+
                             try {
+                                file.createNewFile();
                                 fos = new FileOutputStream(file);
                                 image.compress(Bitmap.CompressFormat.PNG, 100, fos);
                             }
@@ -105,8 +123,8 @@ public class PictureManagerActivity extends AppCompatActivity {
                             try {
                                 Bitmap savedImage = BitmapFactory.decodeStream(new FileInputStream(file));
                                 picHolder.setImageBitmap(savedImage);
-                                mmFetchedImage = savedImage;
-                                selectedPhoto = Uri.parse(file.getAbsolutePath());
+                                mmFetchedFromFrame_Bitmap = savedImage;
+                                mmFetchedFromFrame_Uri = Uri.parse(file.getAbsolutePath());
                             }
                             catch (Exception e){
                                 e.printStackTrace();
@@ -174,12 +192,16 @@ public class PictureManagerActivity extends AppCompatActivity {
         }
     };
 
+    /**
+     * Activity - Constructor
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_picture_manager);
 
-        selectedPhoto = null;
+        mmPictureFromPhone_Uri = null;
         mmBluetoothController = new BluetoothController(this, mReceiver);
         String address = getIntent().getExtras().getString("DeviceAddress");
 
@@ -194,8 +216,12 @@ public class PictureManagerActivity extends AppCompatActivity {
     }
 
 
-
     //--onclick function---
+
+    /**
+     * When "Take picture" button is pressed. Open's camera, takes a picture and then saves it to a location $photoFolder.
+     * @param view
+     */
     public void onCameraButtonClick(View view) {
         try {
             Log.i("ButtonClick", "onCameraButton clicked!");
@@ -209,7 +235,9 @@ public class PictureManagerActivity extends AppCompatActivity {
             Uri imageUri = Uri.fromFile(file);
 
             //Save uri to photo for later
-            cameraPictureURI = imageUri;
+            mmPictureFromPhone_Uri = imageUri;
+
+            //Make intent and set it to save it's results to location $imageUri
 
             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
@@ -218,6 +246,7 @@ public class PictureManagerActivity extends AppCompatActivity {
             ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
             progressBar.setVisibility(View.VISIBLE);
 
+            //start activity intent
             if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
                 startActivityForResult(takePictureIntent, GET_CAMERA_IMAGE);
             }
@@ -226,21 +255,33 @@ public class PictureManagerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * When "get image from gallery" -button is pressed. Fetches a selected image from gallery.
+     * @param view
+     */
     public void onGalleryButtonClick(View view) {
         try {
             Log.i("ButtonClick", "onGalleryButton clicked!");
+
+            //Creates intent and set's it to look for images
             Intent galleryIntent = new Intent(Intent.ACTION_PICK);
             galleryIntent.setType("image/");
 
+            //Show's loading icon
             ProgressBar progressBar = (ProgressBar)findViewById(R.id.captured_progressBar);
             progressBar.setVisibility(View.VISIBLE);
 
+            //Starts gallery activity
             startActivityForResult(galleryIntent, GET_GALLERY_IMAGE);
         } catch (Exception error) {
             Log.e("ButtonClick", "Getting image from gallery has failed", error);
         }
     }
 
+    /**
+     * Returns user to DeviceActivity of the selected PhotoFrame
+     * @param view
+     */
     public void onReturnButtonClick(View view) {
         Intent deviceActivity = new Intent(this, DeviceActivity.class);
 
@@ -250,6 +291,11 @@ public class PictureManagerActivity extends AppCompatActivity {
         deviceActivity.putExtras(bundle);
 
         startActivity(deviceActivity);
+    }
+
+    public void refreshFetchedImage(View view){
+        Log.i("ImageRefresh", "Redownloading shown image from PictureFrame device");
+        getCurrentlyShownPicture();
     }
 
     @Deprecated
@@ -267,8 +313,8 @@ public class PictureManagerActivity extends AppCompatActivity {
     // TODO: 9.12.2017 Kun painetaan serverikuvaa, päivitetään
     // TODO: 9.12.2017 Kaikenlaiset messagheboxist 
     public void onSendToDeviceButtonClick(View view) {
-        if (mmSelectedImage != null) {
-            mmBluetoothController.sendImage(mmDevice, handler, mmSelectedImage);
+        if (mmPictureFromPhone_resizedBitmap != null) {
+            mmBluetoothController.sendImage(mmDevice, handler, mmPictureFromPhone_resizedBitmap);
         } else {
             Log.e("Send_Image", "Cannot send image. None defined for sending", new NullPointerException("No image selected!"));
         }
@@ -276,23 +322,61 @@ public class PictureManagerActivity extends AppCompatActivity {
 
 
     /**
-     * Save fetched image to storage
+     * Save image fetched from PictureFrame to storage
      * @param view
      */
     public void saveToStorageButtonClick(View view){
+        try {
 
+            if(mmFetchedFromFrame_saved){
+                Toast.makeText(getApplicationContext(), "Image has already been saved", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            createFileDir();
+
+            if (mmFetchedFromFrame_Uri != null && mmFetchedFromFrame_Bitmap != null) {
+
+                File file = new File(mmFetchedFromFrame_Uri.getPath());
+                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                File destinationFile = new File(Environment.getExternalStorageDirectory() + photoFolder, timeStamp + ".png");
+
+                FileInputStream input = new FileInputStream(file);
+                FileOutputStream output = new FileOutputStream(destinationFile);
+
+                byte[] buffer = new byte[1024];
+                int read;
+                while ((read = input.read(buffer)) > 0){
+                    output.write(buffer, 0, read);
+                }
+
+                input.close();
+                output.close();
+
+                Log.i("SavingImage", "Saving fetched image now saved");
+                mmFetchedFromFrame_saved = true;
+                Toast.makeText(getApplicationContext(), "Image has been saved", Toast.LENGTH_SHORT).show();
+
+            } else {
+                Log.e("SavingImage", "Either Bitmap or Uri of the downloaded image is missing. Cannot continue");
+                Toast.makeText(getApplicationContext(), "Downloaded image could not be saved. Reload the image and try again", Toast.LENGTH_SHORT).show();
+                return;
+            }
+        } catch (Exception err)
+        {
+            Log.e("SavingImage", "Could not save fetched image", err);
+            Toast.makeText(getApplicationContext(), "Saving image failed", Toast.LENGTH_SHORT).show();
+        }
     }
 
     //---Picture function---
-
-    private void saveToStorage(@NonNull Bitmap targetIMG, Uri targetUri){
-
-    }
-
     /**
      * This function fetches the currently shown picture from the PictureFrame Device.
      */
     public void getCurrentlyShownPicture() {
+
+        mmFetchedFromFrame_saved = false;
+        createFileDir();
 
         ProgressBar progressBar = (ProgressBar)findViewById(R.id.current_progressBar);
         progressBar.setVisibility(View.VISIBLE);
@@ -380,60 +464,93 @@ public class PictureManagerActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * @desc Get image from location $imageUri
+     * @param imageUri - From where image is loaded
+     * @return - Returns normal sized Bitmap image or null
+     */
+    public Bitmap getImageFromUri(@NonNull Uri imageUri){
+        try {
+            Bitmap photo = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            return photo;
+        }
+        catch (IOException err){
+            Log.e("Get normal image", "Could not load a normal sized image from phones memory", err);
+            return null;
+        }
+    }
+
+    // TODO: 12.12.2017 Camera save file msg
     //---On activity response---
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         ImageView receivedImage = (ImageView) findViewById(R.id.capturedImageView);
 
         switch (requestCode) {
+            //when a picture is loaded from gallery
             case GET_GALLERY_IMAGE:
                 if (resultCode == RESULT_OK) {
                     try {
+                        //get uri of the selected image
                         Uri imageURI = data.getData();
+
+                        //get a resized image of the selected image (because some images are too large to be shown as bitmap)
                         Bitmap selectedImage = resizePhoto(imageURI);
 
+                        //change image of the "selected image"-imageview
                         receivedImage.setImageBitmap(selectedImage);
-                        mmSelectedImage = selectedImage;
-                        selectedPhoto = cameraPictureURI;
 
-                        ProgressBar progressBar = (ProgressBar) findViewById(R.id.captured_progressBar);
-                        progressBar.setVisibility(View.INVISIBLE);
+                        //save fetched information to variables
+                        mmPictureFromPhone_Uri = imageURI;
+                        mmPictureFromPhone_resizedBitmap = selectedImage;
+                        mmPictureFromPhone_Origin = PhotoOrigin.Gallery;
 
                     } catch (Exception error) {
-                        Log.i("Fetching image", "Fetching image from gallery has failed!", error);
+                        Log.e("Fetching image", "Fetching image from gallery has failed!", error);
+                        receivedImage.setImageBitmap(null);
+                        mmPictureFromPhone_Uri = null;
+                        mmPictureFromPhone_resizedBitmap = null;
+                        mmPictureFromPhone_Origin = null;
+                    }
+                    finally {
+                        //finally hide the progressbar, because loading has been completed
                         ProgressBar progressBar = (ProgressBar) findViewById(R.id.captured_progressBar);
                         progressBar.setVisibility(View.INVISIBLE);
                     }
                 }
                 break;
 
+            //when a picture is taken with camera
             case GET_CAMERA_IMAGE:
 
+                //hide the progress bar
                 ProgressBar progressBar = (ProgressBar) findViewById(R.id.captured_progressBar);
                 progressBar.setVisibility(View.INVISIBLE);
 
                 if (resultCode == RESULT_OK) {
 
-                    if (cameraPictureURI == null) {
+                    //if photo is taken but it's location was not saved --> exit
+                    if (mmPictureFromPhone_Uri == null) {
                         Log.e("CameraPicture", "Could not find the URI to taken photo");
                         return;
                     }
 
-
                     //Taken picture normally is too large to be display --> resize picture
-                    Bitmap resizedPic = resizePhoto(cameraPictureURI);
+                    Bitmap resizedPic = resizePhoto(mmPictureFromPhone_Uri);
 
                     if (resizedPic == null) {
                         Toast.makeText(getApplicationContext(), "Image could not be resized", Toast.LENGTH_SHORT).show();
+                        mmPictureFromPhone_resizedBitmap = null;
+                        mmPictureFromPhone_Origin = null;
+                        mmPictureFromPhone_Uri = null;
                         break;
                     } else {
                         receivedImage.setImageBitmap(resizedPic);
-                        mmSelectedImage = resizedPic;
+                        mmPictureFromPhone_resizedBitmap = resizedPic;
+                        mmPictureFromPhone_Origin = PhotoOrigin.Camera;
+                        receivedImage.setImageBitmap(mmPictureFromPhone_resizedBitmap);
+                        //no need to specify Uri, because it is already specified
                     }
-
-                    cameraPictureURI = null;
-                    selectedPhoto = cameraPictureURI;
-
                 }
                 break;
 

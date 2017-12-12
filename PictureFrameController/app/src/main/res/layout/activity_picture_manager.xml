@@ -54,6 +54,7 @@
                     android:layout_marginTop="0dp"
                     android:adjustViewBounds="false"
                     android:contentDescription="picture shown in @string/discoverable_device"
+                    android:onClick="refreshFetchedImage"
                     app:srcCompat="@android:drawable/ic_menu_report_image" />
 
                 <ProgressBar
@@ -182,7 +183,7 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:onClick="onReturnButtonClick"
+        android:onClick="saveToStorageButtonClick"
         android:text="@string/saveImage"
         app:layout_constraintBottom_toTopOf="@+id/returnButton"
         app:layout_constraintEnd_toEndOf="parent"

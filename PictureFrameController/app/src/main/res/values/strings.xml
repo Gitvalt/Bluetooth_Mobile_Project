@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PictureFrameController</string>
+    <string name="app_name" translatable="false">PictureFrameController</string>
     <string name="action_settings">Settings</string>
 
     <string name="main_header_0">Found Devices</string>
@@ -39,10 +39,10 @@
     <string name="section_format">Hello World from section: %1$d</string>
     <string name="test_conn">Test connection</string>
     <string name="button_pic">Picture managment</string>
-    <string name="imageLabel">Currently shown image</string>
-    <string name="sendpicture">Send picture to Device</string>
-    <string name="selectedImage">Selected Image</string>
+    <string name="imageLabel">Image shown in PictureFrame</string>
+    <string name="sendpicture">Send captured picture to Device</string>
+    <string name="selectedImage">Image selected from phone</string>
     <string name="ReturnView">Return to view</string>
-    <string name="saveImage">Save image to storage</string>
+    <string name="saveImage">Save fetched picture to memory</string>
 
 </resources>

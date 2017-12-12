@@ -50,8 +50,6 @@ public class DeviceActivity extends AppCompatActivity {
 
     }
 
-    ;
-
     //---Constructor---
     @Override
     protected void onCreate(Bundle savedInstanceState) {
