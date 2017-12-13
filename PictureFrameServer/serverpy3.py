@@ -3,7 +3,6 @@ import time
 import io
 from PIL import Image
 from bluetooth import *
-from tqdm import tqdm
 import base64
 
 
