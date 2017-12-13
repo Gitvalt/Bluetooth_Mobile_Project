@@ -3,3 +3,6 @@ This is a mobile project for JAMK "Mobile Project" -course. App is a android blu
 
 [Demo](http://student.labranet.jamk.fi/~K2470/mobile.mp4)<br>
 /Documents - Contains presentation and possible video of working solution
+
+
+Remember to check out our [wiki pages](https://github.com/Gitvalt/Bluetooth_Mobile_Project/wiki)
