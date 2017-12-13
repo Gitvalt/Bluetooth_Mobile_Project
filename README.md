@@ -1,8 +1,14 @@
 # Bluetooth_Mobile_Project
-This is a mobile project for JAMK "Mobile Project" -course. App is a android bluetooth application that can control raspberry pi based picture frame application
+This is a mobile project for JAMK "Mobile Project" -course. App is a android bluetooth application that can control raspberry pi based picture frame application<br>
 
 [Demo](http://student.labranet.jamk.fi/~K2470/mobile.mp4)<br>
-/Documents - Contains presentation and possible video of working solution
 
+<hr>
 
-Remember to check out our [wiki pages](https://github.com/Gitvalt/Bluetooth_Mobile_Project/wiki)
+/Documents - Contains presentation and possible video of working solution<br>
+/PictureFrameServer - Contains the python frameserver application<br>
+/PictureFrameController - Contains the Android controller application<br>
+
+<hr>
+Remember to check out our <br>
+[wiki pages](https://github.com/Gitvalt/Bluetooth_Mobile_Project/wiki)
