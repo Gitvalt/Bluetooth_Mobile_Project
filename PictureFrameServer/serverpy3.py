@@ -72,7 +72,7 @@ def serverstart(self):
                     size = len(collection)
                     print(size)
 
-                    #if current bytesize is same size as the expected picture bytearray size
+                    # if current bytesize is same size as the expected picture bytearray size
                     if size == int(msgLenght):
                         print("data received!")
                         try:

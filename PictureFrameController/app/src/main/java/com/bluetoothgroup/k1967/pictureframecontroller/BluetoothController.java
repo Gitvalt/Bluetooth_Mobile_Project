@@ -942,6 +942,7 @@ public class BluetoothController {
                 outputStream.flush();
                 closeConnection();
 
+                
                 //the sent image is encoded with base64. Decode the image.
                 byte[] decoded = Base64.decode(concat, Base64.DEFAULT);
 
@@ -1061,6 +1062,7 @@ public class BluetoothController {
                         continueBool = true;
                     }
                     closeConnection();
+
                 }
             } catch (IOException e) {
                 Log.e(Bluetooth_handler, "Couldn't send msg", e);
@@ -1074,6 +1076,7 @@ public class BluetoothController {
 
             if (mmSocket.isConnected()) {
                 closeConnection();
+
             }
 
         }
