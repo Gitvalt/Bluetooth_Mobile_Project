@@ -15,3 +15,5 @@
 
 # Muut
 ScanningDevices_DataFlow - Kuvataan miten ohjelmassa uusien Bluetooth-laitteiden havaitseminen ollaan toteutettu.
+sovelluksenkayttopolku - Kuvaa ohjelman normaalia käyttötapausta.
+handshake - Kuvaa Androidin ja kehyksen välistä kommunikaatiota kun halutaan ladata Androidiin kuva kehysestä.
