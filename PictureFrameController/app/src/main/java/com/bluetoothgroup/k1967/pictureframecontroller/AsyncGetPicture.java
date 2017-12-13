@@ -12,12 +12,16 @@ import android.widget.Toast;
  * Created by Valtteri on 8.12.2017.
  */
 
+/**
+ * AsyncGetPicture - Fetches a bitmap from the PictureFrame and then send's fetched bitmap to Handler
+ */
 public class AsyncGetPicture extends AsyncTask<Void, Void, Bitmap> {
 
     private BluetoothController mBluetoothController;
     private BluetoothDevice mDevice;
     private Handler mHandler;
 
+    //Constructor
     public AsyncGetPicture(BluetoothController controller, BluetoothDevice device, Handler handler) {
         mBluetoothController = controller;
         mDevice = device;
@@ -35,6 +39,7 @@ public class AsyncGetPicture extends AsyncTask<Void, Void, Bitmap> {
         Log.i("AsyncDownload", "Task Completed");
         Message readMsg = null;
 
+        //if bitmap was created, then set messages arg1 as 1. Else set arg1 --> 0
         if(bitmap == null){
             readMsg = mHandler.obtainMessage(DeviceActivity.MessageTypes.ImageReceived.ordinal(), 2, 0, null);
 

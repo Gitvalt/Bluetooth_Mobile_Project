@@ -51,6 +51,13 @@ import java.util.UUID;
 
 public class BluetoothController {
 
+    /**
+     * DetectedDevices - Map of Bluetooth devices (both found and already paired devices) key = address, value = Bluetoothdevice
+     * mmBluetoothAdapter - Basic Bluetooth manager
+     * mmParent
+     * mmBroadcastReceiver - Broadcast Receiver that handles the broadcasts
+     * mmBroadcastReceiver - Broadcast Receiver that handles the broadcasts
+     */
     private static ArrayMap<String, BluetoothDevice> DetectedDevices;
     private BluetoothAdapter mmBluetoothAdapter;
     private Activity mmParent;
