@@ -91,7 +91,6 @@ public class PictureManagerActivity extends AppCompatActivity {
                     ImageView picHolder = (ImageView) findViewById(R.id.currentImageView);
                     switch (response) {
                         case 1:
-
                             Log.i("Download Handler", "Image received successfully");
                             Bitmap image = (Bitmap) msg.obj;
                             File file = new File(Environment.getExternalStorageDirectory() + photoFolderTmp, "fetchedTemporary" + ".png");

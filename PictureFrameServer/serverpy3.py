@@ -9,47 +9,44 @@ import base64
 
 def serverstart(self):
     while True:
-        #flush bad connections
-        server_sock = BluetoothSocket(RFCOMM)
-        server_sock.bind(("", PORT_ANY))
-        server_sock.listen(1)
-                    
-        server_sock.close()
-
-        server_sock = BluetoothSocket(RFCOMM)
-        server_sock.bind(("", PORT_ANY))
-        server_sock.listen(1)
-
-        port = server_sock.getsockname()[1]
-
-        uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
-
-        advertise_service(server_sock, "BluetoothDemoServer", service_id=uuid, service_classes=[
-                        uuid, SERIAL_PORT_CLASS], profiles=[SERIAL_PORT_PROFILE])
-
-        print("Waiting for connection...")
-
-        client_sock, client_info = server_sock.accept()
-        print(("New connection: ", client_info))
-        client_sock.send("Connection successful!,200")
-        start_time = time.time()
-        
         try:
+
+            server_sock = BluetoothSocket(RFCOMM)
+            server_sock.bind(("", PORT_ANY))
+            server_sock.listen(1)
+
+            port = server_sock.getsockname()[1]
+
+            uuid = "94f39d29-7d6d-437d-973b-fba39e49d4ee"
+
+            advertise_service(server_sock, "BluetoothDemoServer", service_id=uuid, service_classes=[
+                            uuid, SERIAL_PORT_CLASS], profiles=[SERIAL_PORT_PROFILE])
+
+            print("Waiting for connection...")
+
+            client_sock, client_info = server_sock.accept()
+            print(("New connection: ", client_info))
+            client_sock.send("Connection successful!,200")
+            start_time = time.time()
             collection = b""
+        
+            
             command = "default"
             msgLenght = 0 
             imgType = None
-            while True:
-                #Default input mode (expect string message (mode, length, type))
-                if command == "default":
-                    try:
-                        #try to parse input as utf-8 message.
-                        print("default!")
-                        data = client_sock.recv(2000)
-                        data_str = data.decode("utf-8")
-                        
-                        #print received input
-                        print("Received input: '{}'".format(data_str))
+
+            #Default input mode (expect string message (mode, length, type))
+            if command == "default":
+                try:
+                    #try to parse input as utf-8 message.
+                    print("default!")
+                    data = client_sock.recv(2000)
+                    data_str = data.decode("utf-8")
+                    
+                    #print received input
+                    print("Received input: '{}'".format(data_str))
+
+                    if data_str is not '':
 
                         # parse input command 
                         # Usually prepares frame for reading picture bytearray:
@@ -60,13 +57,16 @@ def serverstart(self):
                         imgType = msg[2]
 
                         if command == "Picture":
-                                client_sock.send("Ready for picture")
+                                client_sock.send("200")
 
-                    except Exception as e:
-                        print(e.message)
+                except Exception as e:
+                    print(e.message)
 
-                #if we are expecting a picture
-                elif command == "Picture":
+            #if we are expecting a picture
+            if command == "Picture":
+                size = len(collection)
+                collection = b""
+                while size < int(msgLenght):
                     #print downloading milestones
                     print("picture", msgLenght, imgType)
                     size = len(collection)
@@ -75,12 +75,15 @@ def serverstart(self):
                     #if current bytesize is same size as the expected picture bytearray size
                     if size == int(msgLenght):
                         print("data received!")
-                        client_sock.send("Picture,OK,{}".format(time.time()))       
-                        item = Image.open(io.BytesIO(collection))
-                        item.save("./media/{}.png".format(int(time.time())))
-                        command = "default"
-                        print("finished")
-                        self.get_images(True)
+                        try:
+                            with open("media/{}.png".format(time.time()), "wb+") as image_f:
+                                image_f.write(base64.b64decode(collection))
+                            command = "default"
+                            client_sock.send("Picture,OK,{}".format(time.time())) 
+                            print("finished")
+                            self.get_images(True)
+                        except Exception as e:
+                            print(e.message)
 
                     #if too much data has been received
                     elif size > int(msgLenght):
@@ -93,29 +96,29 @@ def serverstart(self):
                         collection += (data)
                         print("Downloading...({} out of {})".format(len(collection), msgLenght))
 
-                elif command == "Status":
-                    client_sock.send("{},{},{}".format("Status","200",time.time()))
+            elif command == "Status":
+                client_sock.send("{},{},{}".format("Status","200",time.time()))
 
-                elif command == "GetImage":
-                    print("sending ")
-                    with open(self.images[self.selected_img], "rb") as image_f:
-                        imgb64 = base64.b64encode(image_f.read())
-                    #print("{}".format(imgb64))
-                    debugfile = open("Output.txt", "w+")
-                    debugfile.write("{}".format(imgb64))
-                    debugfile.close()
-                    client_sock.send("{}".format(len(imgb64)))
-                    print(len(imgb64))
-                    handshake = client_sock.recv(512)
-                    client_sock.send("{}".format(imgb64)[2:-1])
-                    print("done")
-                    command = "default"
-                                        
-                elif command == "Shutdown":
-                    client_sock.send("Shutdown")
-                    print("Disconnecting")
-                    break
-                    
+            elif command == "GetImage":
+                print("sending ")
+                with open(self.images[self.selected_img], "rb") as image_f:
+                    imgb64 = base64.b64encode(image_f.read())
+                #print("{}".format(imgb64))
+                debugfile = open("Output.txt", "w+")
+                debugfile.write("{}".format(imgb64))
+                debugfile.close()
+                client_sock.send("{}".format(len(imgb64)))
+                print(len(imgb64))
+                handshake = client_sock.recv(512)
+                client_sock.send("{}".format(imgb64)[2:-1])
+                print("done")
+                command = "default"
+                                    
+            elif command == "Shutdown":
+                client_sock.send("Shutdown")
+                print("Disconnecting")
+                break
+                
                     
         except IOError as err:
             pass
